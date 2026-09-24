@@ -131,6 +131,8 @@ export interface Order {
   hasReviewed: boolean;
   createdAt: string;
   updatedAt: string;
+  shippedAt?: string;
+  deliveredAt?: string;
 }
 
 export interface OrderItem {

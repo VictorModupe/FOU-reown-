@@ -1,12 +1,12 @@
 import { Stack } from "expo-router";
 import "../global.css";
-import { ClerkProvider } from "@clerk/clerk-expo";
+import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Providers from "@/config/providers";
@@ -74,6 +74,21 @@ const styles = StyleSheet.create({
 
 function ThemeRoot() {
   const { themeVariables } = useTheme();
+  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const [sessionCleared, setSessionCleared] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded || sessionCleared) return;
+
+    if (!isSignedIn) {
+      setSessionCleared(true);
+      return;
+    }
+
+    void signOut().finally(() => setSessionCleared(true));
+  }, [isLoaded, isSignedIn, sessionCleared, signOut]);
+
+  if (!isLoaded || !sessionCleared) return null;
 
   return (
     <View className="flex-1" style={themeVariables}>

@@ -1,12 +1,13 @@
 import { View, Text, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from 'expo-router';
-import { useSignIn } from '@clerk/clerk-expo';
+import { useAuth, useSignIn } from '@clerk/clerk-expo';
 import { toast } from 'sonner-native';
 import useSocialAuth from "@/hooks/useSocialAuth";
+import useCurrentUser from "@/hooks/useCurrentUser";
 
 interface LoginFormData {
     email: string;
@@ -15,7 +16,9 @@ interface LoginFormData {
 export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+    const { isLoaded: authLoaded, isSignedIn } = useAuth();
     const { isLoaded, signIn, setActive } = useSignIn();
+    const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
     const { loadingStrategy, handleSocialAuth } = useSocialAuth();
 
     const loginForm = useForm<LoginFormData>({
@@ -27,22 +30,32 @@ export default function LoginScreen() {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // useEffect(() => {
+    //     if (!authLoaded || !isSignedIn || isUserLoading) return;
+    //     // router.replace(currentUser?.role === "vendor" ? "/(vendor-tabs)" : "/(customer-tabs)");
+    //     router.replace("/(vendor-tabs)")
+
+    // }, [authLoaded, currentUser?.role, isSignedIn, isUserLoading, router]);
+
+    // if (!authLoaded || (isSignedIn && isUserLoading)) return null;
+
     const onLoginSubmit = async ({ email, password }: LoginFormData) => {
-        if (!isLoaded || !signIn) return;
-        setIsSubmitting(true);
-        try {
-            const result = await signIn.create({ identifier: email, password });
-            if (result.status !== "complete" || !result.createdSessionId) {
-                throw new Error("Additional verification is required for this account.");
-            }
-            await setActive({ session: result.createdSessionId });
-            toast.success("Login successful");
+        // if (!isLoaded || !signIn) return;
+        // setIsSubmitting(true);
+        // try {
+        //     const result = await signIn.create({ identifier: email, password });
+        //     if (result.status !== "complete" || !result.createdSessionId) {
+        //         throw new Error("Additional verification is required for this account.");
+        //     }
+        //     await setActive({ session: result.createdSessionId });
+        //     toast.success("Login successful");
             router.replace("/(vendor-tabs)");
-        } catch (error: any) {
-            toast.error(error?.errors?.[0]?.longMessage || error?.message || "Unable to sign in");
-        } finally {
-            setIsSubmitting(false);
-        }
+        // } catch (error: any) {
+        //     toast.error(error?.errors?.[0]?.longMessage || error?.message || "Unable to sign in");
+        // } finally {
+        //     setIsSubmitting(false);
+        // }
     };
     const handleSignUpNavigation = () => {
         router.push("/(routes)/signup");

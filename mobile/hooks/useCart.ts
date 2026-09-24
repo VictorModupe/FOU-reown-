@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api";
 import { Cart } from "@/types";
-import { useAuth } from "@clerk/clerk-expo";
 
 const useCart = () => {
   const api = useApi();
-  const { isSignedIn } = useAuth();
   const queryClient = useQueryClient();
 
   const {
@@ -18,15 +16,11 @@ const useCart = () => {
       const { data } = await api.get<{ cart: Cart }>("/cart");
       return data.cart;
     },
-    enabled: isSignedIn,
+    enabled: true,
   });
 
   const addToCartMutation = useMutation({
     mutationFn: async ({ productId, quantity = 1 }: { productId: string; quantity?: number }) => {
-      if (!isSignedIn) {
-        throw new Error("Please sign in before adding items to your cart.");
-      }
-
       const { data } = await api.post<{ cart: Cart }>("/cart", { productId, quantity });
       return data.cart;
     },
@@ -69,9 +63,13 @@ const useCart = () => {
     cartTotal,
     cartItemCount,
     addToCart: addToCartMutation.mutate,
+    addToCartAsync: addToCartMutation.mutateAsync,
     updateQuantity: updateQuantityMutation.mutate,
+    updateQuantityAsync: updateQuantityMutation.mutateAsync,
     removeFromCart: removeFromCartMutation.mutate,
+    removeFromCartAsync: removeFromCartMutation.mutateAsync,
     clearCart: clearCartMutation.mutate,
+    clearCartAsync: clearCartMutation.mutateAsync,
     isAddingToCart: addToCartMutation.isPending,
     isUpdating: updateQuantityMutation.isPending,
     isRemoving: removeFromCartMutation.isPending,

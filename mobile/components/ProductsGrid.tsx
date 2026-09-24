@@ -20,9 +20,18 @@ interface ProductsGridProps {
   isError: boolean;
   products: Product[];
   error: unknown;
+  requiresAuth?: boolean;
+  cartRoute?: "/(customer-tabs)/cart" | "/(vendor-tabs)/cart";
 }
 
-const ProductsGrid = ({ products, isLoading, isError, error }: ProductsGridProps) => {
+const ProductsGrid = ({
+  products,
+  isLoading,
+  isError,
+  error,
+  requiresAuth = false,
+  cartRoute = "/(customer-tabs)/cart",
+}: ProductsGridProps) => {
   const { isInWishlist, toggleWishlist, isAddingToWishlist, isRemovingFromWishlist } =
     useWishlist();
 
@@ -30,7 +39,7 @@ const ProductsGrid = ({ products, isLoading, isError, error }: ProductsGridProps
   const { isSignedIn } = useAuth();
 
   const handleAddToCart = (productId: string, productName: string) => {
-    if (!isSignedIn) {
+    if (requiresAuth && !isSignedIn) {
       Alert.alert("Sign in required", "Please sign in before adding items to your cart.", [
         { text: "Cancel", style: "cancel" },
         { text: "Sign in", onPress: () => router.push("/(routes)/login") },
@@ -42,7 +51,7 @@ const ProductsGrid = ({ products, isLoading, isError, error }: ProductsGridProps
       { productId, quantity: 1 },
       {
         onSuccess: () => {
-          Alert.alert("Success", `${productName} added to cart!`);
+          router.push(cartRoute);
         },
         onError: (error: any) => {
           Alert.alert("Error", error?.response?.data?.error || "Failed to add to cart");
@@ -72,7 +81,7 @@ const ProductsGrid = ({ products, isLoading, isError, error }: ProductsGridProps
           disabled={isAddingToWishlist || isRemovingFromWishlist}
         >
           {isAddingToWishlist || isRemovingFromWishlist ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color="#F9FFFF" />
           ) : (
             <Ionicons
               name={isInWishlist(product._id) ? "heart" : "heart-outline"}

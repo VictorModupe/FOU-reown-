@@ -5,8 +5,7 @@ import useWishlist from "@/hooks/useWishlist";
 import { useCreateOffer } from "@/hooks/useOffers";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
+import { router, useLocalSearchParams, useSegments } from "expo-router";
 import { useState } from "react";
 import {
   View,
@@ -26,7 +25,10 @@ const ProductDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isError, isLoading } = useProduct(id);
   const { addToCart, isAddingToCart } = useCart();
-  const { isSignedIn } = useAuth();
+  const segments = useSegments();
+  const cartRoute = (segments as readonly string[]).includes("(vendor-tabs)")
+    ? "/(vendor-tabs)/cart"
+    : "/(customer-tabs)/cart";
 
   const { isInWishlist, toggleWishlist, isAddingToWishlist, isRemovingFromWishlist } =
     useWishlist();
@@ -40,18 +42,10 @@ const ProductDetailScreen = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    if (!isSignedIn) {
-      Alert.alert("Sign in required", "Please sign in before adding items to your cart.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => router.push("/(routes)/login") },
-      ]);
-      return;
-    }
-
     addToCart(
       { productId: product._id, quantity },
       {
-        onSuccess: () => Alert.alert("Success", `${product.name} added to cart!`),
+        onSuccess: () => router.push(cartRoute),
         onError: (error: any) => {
           Alert.alert("Error", error?.response?.data?.error || "Failed to add to cart");
         },

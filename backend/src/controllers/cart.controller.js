@@ -1,20 +1,72 @@
 import { Cart } from "../models/cart.model.js";
 import { Product } from "../models/product.model.js";
 
+const getCartOwner = (req) => {
+  if (req.user?.clerkId) {
+    return { clerkId: req.user.clerkId, user: req.user._id };
+  }
+
+  const guestSessionId = req.get("x-guest-session-id");
+  if (!guestSessionId || !/^[a-zA-Z0-9-]{16,128}$/.test(guestSessionId)) {
+    return null;
+  }
+
+  return { clerkId: `guest:${guestSessionId}`, guestSessionId };
+};
+
+const findCart = (req) => {
+  const owner = getCartOwner(req);
+  return owner ? Cart.findOne({ clerkId: owner.clerkId }) : null;
+};
+
+const findGuestCart = (req) => {
+  const guestSessionId = req.get("x-guest-session-id");
+  if (!guestSessionId || !/^[a-zA-Z0-9-]{16,128}$/.test(guestSessionId)) {
+    return null;
+  }
+
+  return Cart.findOne({ guestSessionId });
+};
+
+const createCart = (req) => {
+  const owner = getCartOwner(req);
+  if (!owner) return null;
+  return Cart.create({ ...owner, items: [] });
+};
+
 export async function getCart(req, res) {
   try {
-    let cart = await Cart.findOne({ clerkId: req.user.clerkId }).populate("items.product");
-
-    if (!cart) {
-      const user = req.user;
-
-      cart = await Cart.create({
-        user: user._id,
-        clerkId: user.clerkId,
-        items: [],
-      });
+    let cart = await findCart(req);
+    if (!getCartOwner(req)) {
+      return res.status(400).json({ error: "A guest session is required" });
     }
 
+    if (!cart) {
+      cart = await createCart(req);
+    }
+
+    if (req.user) {
+      const guestCart = await findGuestCart(req);
+      if (guestCart && guestCart._id.toString() !== cart._id.toString()) {
+        const existingProducts = new Map(
+          cart.items.map((item) => [item.product.toString(), item])
+        );
+
+        for (const guestItem of guestCart.items) {
+          const existingItem = existingProducts.get(guestItem.product.toString());
+          if (existingItem) {
+            existingItem.quantity += guestItem.quantity;
+          } else {
+            cart.items.push(guestItem);
+          }
+        }
+
+        await cart.save();
+        await Cart.deleteOne({ _id: guestCart._id });
+      }
+    }
+
+    await cart.populate("items.product");
     res.status(200).json({ cart });
   } catch (error) {
     console.error("Error in getCart controller:", error);
@@ -36,16 +88,14 @@ export async function addToCart(req, res) {
       return res.status(400).json({ error: "Insufficient stock" });
     }
 
-    let cart = await Cart.findOne({ clerkId: req.user.clerkId });
+    if (!getCartOwner(req)) {
+      return res.status(400).json({ error: "A guest session is required" });
+    }
+
+    let cart = await findCart(req);
 
     if (!cart) {
-      const user = req.user;
-
-      cart = await Cart.create({
-        user: user._id,
-        clerkId: user.clerkId,
-        items: [],
-      });
+      cart = await createCart(req);
     }
 
     // check if item already in the cart
@@ -64,6 +114,7 @@ export async function addToCart(req, res) {
 
     await cart.save();
 
+    await cart.populate("items.product");
     res.status(200).json({ message: "Item added to cart", cart });
   } catch (error) {
     console.error("Error in addToCart controller:", error);
@@ -80,7 +131,7 @@ export async function updateCartItem(req, res) {
       return res.status(400).json({ error: "Quantity must be at least 1" });
     }
 
-    const cart = await Cart.findOne({ clerkId: req.user.clerkId });
+    const cart = await findCart(req);
     if (!cart) {
       return res.status(404).json({ error: "Cart not found" });
     }
@@ -114,7 +165,7 @@ export async function removeFromCart(req, res) {
   try {
     const { productId } = req.params;
 
-    const cart = await Cart.findOne({ clerkId: req.user.clerkId });
+    const cart = await findCart(req);
     if (!cart) {
       return res.status(404).json({ error: "Cart not found" });
     }
@@ -131,7 +182,7 @@ export async function removeFromCart(req, res) {
 
 export const clearCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ clerkId: req.user.clerkId });
+    const cart = await findCart(req);
     if (!cart) {
       return res.status(404).json({ error: "Cart not found" });
     }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { protectRoute } from "../middleware/auth.middleware.js";
+import { optionalAuth } from "../middleware/auth.middleware.js";
 import {
   addToCart,
   clearCart,
@@ -10,7 +10,7 @@ import {
 
 const router = Router();
 
-router.use(protectRoute);
+router.use(optionalAuth);
 
 router.get("/", getCart);
 router.post("/", addToCart);

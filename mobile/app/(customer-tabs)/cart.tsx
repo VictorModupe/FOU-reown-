@@ -24,7 +24,7 @@ const CartScreen = () => {
     cart,
     cartItemCount,
     cartTotal,
-    clearCart,
+    clearCartAsync,
     isError,
     isLoading,
     isRemoving,
@@ -133,10 +133,23 @@ const CartScreen = () => {
 
     setPaymentLoading(true);
     try {
-      await api.post("/payment/flutterwave/verify", { transactionId: result.transaction_id });
-      clearCart();
+      const { data: verification } = await api.post("/payment/flutterwave/verify", {
+        transactionId: result.transaction_id,
+      });
+
+      try {
+        await clearCartAsync();
+      } catch {
+        await queryClient.invalidateQueries({ queryKey: ["cart"] });
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
-      Toast.show({ type: "success", text1: "Payment successful", text2: "Your order is being prepared." });
+      Toast.show({
+        type: "success",
+        text1: "Payment successful",
+        text2: `Order #${String(verification.orderId).slice(-8).toUpperCase()} is being prepared.`,
+      });
+      router.push("/orders");
     } catch (error: any) {
       Toast.show({ type: "error", text1: "Payment verification failed", text2: error?.response?.data?.error || "Please contact support." });
     } finally {

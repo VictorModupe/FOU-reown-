@@ -75,7 +75,10 @@ export async function verifyFlutterwavePayment(req, res) {
       return res.status(400).json({ error: "Flutterwave payment metadata is incomplete" });
     }
     const existingOrder = await Order.findOne({ "paymentResult.id": String(transaction.id) });
-    if (existingOrder) return res.status(200).json({ orderId: existingOrder._id, status: "success" });
+    if (existingOrder) {
+      await Cart.updateOne({ user: req.user._id }, { $set: { items: [] } });
+      return res.status(200).json({ orderId: existingOrder._id, status: "success" });
+    }
 
     const order = await Order.create({
       user: metadata.userId,
@@ -88,6 +91,7 @@ export async function verifyFlutterwavePayment(req, res) {
     for (const item of metadata.orderItems) {
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
     }
+    await Cart.updateOne({ user: req.user._id }, { $set: { items: [] } });
     return res.status(200).json({ orderId: order._id, status: "success" });
   } catch (error) {
     console.error("Error verifying Flutterwave payment:", error);

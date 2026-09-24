@@ -2,6 +2,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 import axios from "axios";
 import { useEffect } from "react";
+import { getGuestCartSessionId } from "@/lib/guestCart";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000/api";
 
@@ -45,9 +46,12 @@ export const useApi = () => {
   useEffect(() => {
     const interceptor = api.interceptors.request.use(async (config) => {
       const token = await getToken();
+      const guestCartSessionId = await getGuestCartSessionId();
+
+      config.headers = config.headers || {};
+      config.headers["x-guest-session-id"] = guestCartSessionId;
 
       if (token) {
-        config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
       }
 

@@ -13,7 +13,6 @@ import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } fr
 function OrdersScreen() {
   const { data: orders, isLoading, isError } = useOrders();
   const { createReviewAsync, isCreatingReview } = useReviews();
-
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [productRatings, setProductRatings] = useState<{ [key: string]: number }>({});
@@ -21,37 +20,30 @@ function OrdersScreen() {
   const handleOpenRating = (order: Order) => {
     setShowRatingModal(true);
     setSelectedOrder(order);
-
-    // init ratings for all product to 0 - resettin the state for each product
     const initialRatings: { [key: string]: number } = {};
     order.orderItems.forEach((item) => {
-      const productId = item.product._id;
-      initialRatings[productId] = 0;
+      initialRatings[item.product._id] = 0;
     });
     setProductRatings(initialRatings);
   };
 
   const handleSubmitRating = async () => {
     if (!selectedOrder) return;
-
-    // check if all products have been rated
-    const allRated = Object.values(productRatings).every((rating) => rating > 0);
-    if (!allRated) {
+    if (!Object.values(productRatings).every((rating) => rating > 0)) {
       Alert.alert("Error", "Please rate all products");
       return;
     }
 
     try {
       await Promise.all(
-        selectedOrder.orderItems.map((item) => {
-          return createReviewAsync({
+        selectedOrder.orderItems.map((item) =>
+          createReviewAsync({
             productId: item.product._id,
             orderId: selectedOrder._id,
             rating: productRatings[item.product._id],
-          });
-        })
+          })
+        )
       );
-
       Alert.alert("Success", "Thank you for rating all products!");
       setShowRatingModal(false);
       setSelectedOrder(null);
@@ -63,7 +55,6 @@ function OrdersScreen() {
 
   return (
     <SafeScreen>
-      {/* Header */}
       <View className="px-6 pb-5 border-b border-surface flex-row items-center">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
@@ -78,11 +69,7 @@ function OrdersScreen() {
       ) : !orders || orders.length === 0 ? (
         <EmptyUI />
       ) : (
-        <ScrollView
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-        >
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
           <View className="px-6 py-4">
             {orders.map((order) => {
               const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -92,62 +79,37 @@ function OrdersScreen() {
                 <View key={order._id} className="bg-surface rounded-3xl p-5 mb-4">
                   <View className="flex-row mb-4">
                     <View className="relative">
-                      <Image
-                        source={firstImage}
-                        style={{ height: 80, width: 80, borderRadius: 8 }}
-                        contentFit="cover"
-                      />
-
-                      {/* BADGE FOR MORE ITEMS */}
+                      <Image source={firstImage} style={{ height: 80, width: 80, borderRadius: 8 }} contentFit="cover" />
                       {order.orderItems.length > 1 && (
                         <View className="absolute -bottom-1 -right-1 bg-primary rounded-full size-7 items-center justify-center">
-                          <Text className="text-background text-xs font-bold">
-                            +{order.orderItems.length - 1}
-                          </Text>
+                          <Text className="text-background text-xs font-bold">+{order.orderItems.length - 1}</Text>
                         </View>
                       )}
                     </View>
-
                     <View className="flex-1 ml-4">
-                      <Text className="text-text-primary font-bold text-base mb-1">
-                        Order #{order._id.slice(-8).toUpperCase()}
-                      </Text>
-                      <Text className="text-text-secondary text-sm mb-2">
-                        {formatDate(order.createdAt)}
-                      </Text>
-                      <View
-                        className="self-start px-3 py-1.5 rounded-full"
-                        style={{ backgroundColor: getStatusColor(order.status) + "20" }}
-                      >
-                        <Text
-                          className="text-xs font-bold"
-                          style={{ color: getStatusColor(order.status) }}
-                        >
+                      <Text className="text-text-primary font-bold text-base mb-1">Order #{order._id.slice(-8).toUpperCase()}</Text>
+                      <Text className="text-text-secondary text-sm mb-2">{formatDate(order.createdAt)}</Text>
+                      <View className="self-start px-3 py-1.5 rounded-full" style={{ backgroundColor: getStatusColor(order.status) + "20" }}>
+                        <Text className="text-xs font-bold" style={{ color: getStatusColor(order.status) }}>
                           {capitalizeFirstLetter(order.status)}
                         </Text>
                       </View>
                     </View>
                   </View>
 
-                  {/* ORDER ITEMS SUMMARY */}
-                  {order.orderItems.map((item, index) => (
-                    <Text
-                      key={item._id}
-                      className="text-text-secondary text-sm flex-1"
-                      numberOfLines={1}
-                    >
+                  {order.orderItems.map((item) => (
+                    <Text key={item._id} className="text-text-secondary text-sm flex-1" numberOfLines={1}>
                       {item.name} × {item.quantity}
                     </Text>
                   ))}
 
+                  <OrderTracking order={order} />
+
                   <View className="border-t border-background-lighter pt-3 flex-row justify-between items-center">
                     <View>
                       <Text className="text-text-secondary text-xs mb-1">{totalItems} items</Text>
-                      <Text className="text-primary font-bold text-xl">
-                        ${order.totalPrice.toFixed(2)}
-                      </Text>
+                      <Text className="text-primary font-bold text-xl">${order.totalPrice.toFixed(2)}</Text>
                     </View>
-
                     {order.status === "delivered" &&
                       (order.hasReviewed ? (
                         <View className="bg-primary/20 px-5 py-3 rounded-full flex-row items-center">
@@ -155,15 +117,9 @@ function OrdersScreen() {
                           <Text className="text-primary font-bold text-sm ml-2">Reviewed</Text>
                         </View>
                       ) : (
-                        <TouchableOpacity
-                          className="bg-primary px-5 py-3 rounded-full flex-row items-center"
-                          activeOpacity={0.7}
-                          onPress={() => handleOpenRating(order)}
-                        >
+                        <TouchableOpacity className="bg-primary px-5 py-3 rounded-full flex-row items-center" activeOpacity={0.7} onPress={() => handleOpenRating(order)}>
                           <Ionicons name="star" size={18} color="#121212" />
-                          <Text className="text-background font-bold text-sm ml-2">
-                            Leave Rating
-                          </Text>
+                          <Text className="text-background font-bold text-sm ml-2">Leave Rating</Text>
                         </TouchableOpacity>
                       ))}
                   </View>
@@ -181,14 +137,43 @@ function OrdersScreen() {
         productRatings={productRatings}
         onSubmit={handleSubmitRating}
         isSubmitting={isCreatingReview}
-        onRatingChange={(productId, rating) =>
-          setProductRatings((prev) => ({ ...prev, [productId]: rating }))
-        }
+        onRatingChange={(productId, rating) => setProductRatings((prev) => ({ ...prev, [productId]: rating }))}
       />
     </SafeScreen>
   );
 }
+
 export default OrdersScreen;
+
+function OrderTracking({ order }: { order: Order }) {
+  const stages = [
+    { label: "Order received", date: order.createdAt, icon: "receipt-outline" as const },
+    { label: "Shipped", date: order.shippedAt, icon: "cube-outline" as const },
+    { label: "Delivered", date: order.deliveredAt, icon: "checkmark-circle-outline" as const },
+  ];
+  const currentStage = { pending: 0, shipped: 1, delivered: 2 }[order.status];
+
+  return (
+    <View className="mt-4 mb-4 rounded-2xl bg-background/50 p-4">
+      <Text className="text-text-primary font-bold mb-4">Order tracking</Text>
+      {stages.map((stage, index) => {
+        const isComplete = index <= currentStage;
+        return (
+          <View key={stage.label} className="flex-row items-start">
+            <View className="items-center mr-3">
+              <Ionicons name={stage.icon} size={20} color={isComplete ? "#8264A9" : "#666666"} />
+              {index < stages.length - 1 && <View className={`w-px h-6 ${isComplete ? "bg-primary" : "bg-background-lighter"}`} />}
+            </View>
+            <View className="flex-1 pb-3">
+              <Text className={`text-sm font-semibold ${isComplete ? "text-text-primary" : "text-text-secondary"}`}>{stage.label}</Text>
+              {stage.date && <Text className="text-text-secondary text-xs mt-1">{formatDate(stage.date)}</Text>}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 function LoadingUI() {
   return (
@@ -204,9 +189,7 @@ function ErrorUI() {
     <View className="flex-1 items-center justify-center px-6">
       <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
       <Text className="text-text-primary font-semibold text-xl mt-4">Failed to load orders</Text>
-      <Text className="text-text-secondary text-center mt-2">
-        Please check your connection and try again
-      </Text>
+      <Text className="text-text-secondary text-center mt-2">Please check your connection and try again</Text>
     </View>
   );
 }
@@ -216,9 +199,7 @@ function EmptyUI() {
     <View className="flex-1 items-center justify-center px-6">
       <Ionicons name="receipt-outline" size={80} color="#666" />
       <Text className="text-text-primary font-semibold text-xl mt-4">No orders yet</Text>
-      <Text className="text-text-secondary text-center mt-2">
-        Your order history will appear here
-      </Text>
+      <Text className="text-text-secondary text-center mt-2">Your order history will appear here</Text>
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import ProductsGrid from "@/components/ProductsGrid";
+import ProductsGrid from "@/components/CustomerProductsGrid";
 import SafeScreen from "@/components/SafeScreen";
 import useProducts from "@/hooks/useProducts";
 import { Ionicons } from "@expo/vector-icons";

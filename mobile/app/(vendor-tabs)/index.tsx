@@ -1,4 +1,4 @@
-import ProductsGrid from "@/components/ProductsGrid";
+import ProductsGrid from "@/components/VendorProductsGrid";
 import SafeScreen from "@/components/SafeScreen";
 import useProducts from "@/hooks/useProducts";
 
