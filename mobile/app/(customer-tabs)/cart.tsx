@@ -290,6 +290,8 @@ const CartScreen = () => {
           <PayWithFlutterwave
             options={paymentOptions}
             onRedirect={handleFlutterwaveRedirect}
+            onWillInitialize={() => setPaymentLoading(true)}
+            onDidInitialize={() => setPaymentLoading(false)}
             onAbort={() => {
               setPaymentOptions(null);
               setPaymentLoading(false);

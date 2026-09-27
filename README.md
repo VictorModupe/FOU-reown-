@@ -53,6 +53,7 @@ INNGEST_SIGNING_KEY=your_inngest_signing_key
 ADMIN_EMAIL=admin@example.com
 
 FLUTTERWAVE_SECRET_KEY=your_flutterwave_secret_key
+FLUTTERWAVE_WEBHOOK_SECRET_HASH=your_flutterwave_dashboard_webhook_secret_hash
 ```
 
 Create `admin/.env`:
@@ -128,4 +129,4 @@ npm run build:preview
 npm run build:production
 ```
 
-Set production API URLs, Clerk keys, payment keys, redirect URLs, and webhook endpoints in the deployment environment before releasing.
+Set production API URLs, Clerk keys, payment keys, and `FLUTTERWAVE_WEBHOOK_SECRET_HASH` in the deployment environment. Configure Flutterwave to POST webhooks to `https://<your-backend-host>/api/payment/flutterwave/webhook`, use the same secret hash in the Flutterwave dashboard and backend environment, and enable webhook retries.
