@@ -6,14 +6,14 @@ import { User } from "@/types";
 
 export default function useCurrentUser() {
   const api = useApi();
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
 
   return useQuery({
-    queryKey: ["current-user"],
+    queryKey: ["current-user", userId],
     queryFn: async () => {
       const { data } = await api.get<{ user: User }>("/users/me");
       return data.user;
     },
-    enabled: isSignedIn,
+    enabled: isLoaded && isSignedIn,
   });
 }

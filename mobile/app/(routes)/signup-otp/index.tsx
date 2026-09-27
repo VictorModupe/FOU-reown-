@@ -120,6 +120,6 @@ const styles = StyleSheet.create({
 		borderColor: 'rgba(255,255,255,0.45)',
 		borderRadius: 10,
 		fontSize: 24,
-		color: '#111',
+		color: '#FFF',
 	},
 });

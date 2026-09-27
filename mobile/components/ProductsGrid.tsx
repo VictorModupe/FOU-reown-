@@ -3,7 +3,6 @@ import useWishlist from "@/hooks/useWishlist";
 import { Product } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
 import {
   View,
   Text,
@@ -20,7 +19,6 @@ interface ProductsGridProps {
   isError: boolean;
   products: Product[];
   error: unknown;
-  requiresAuth?: boolean;
   cartRoute?: "/(customer-tabs)/cart" | "/(vendor-tabs)/cart";
 }
 
@@ -29,24 +27,14 @@ const ProductsGrid = ({
   isLoading,
   isError,
   error,
-  requiresAuth = false,
   cartRoute = "/(customer-tabs)/cart",
 }: ProductsGridProps) => {
   const { isInWishlist, toggleWishlist, isAddingToWishlist, isRemovingFromWishlist } =
     useWishlist();
 
   const { isAddingToCart, addToCart } = useCart();
-  const { isSignedIn } = useAuth();
 
   const handleAddToCart = (productId: string, productName: string) => {
-    if (requiresAuth && !isSignedIn) {
-      Alert.alert("Sign in required", "Please sign in before adding items to your cart.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => router.push("/(routes)/login") },
-      ]);
-      return;
-    }
-
     addToCart(
       { productId, quantity: 1 },
       {
@@ -54,7 +42,13 @@ const ProductsGrid = ({
           router.push(cartRoute);
         },
         onError: (error: any) => {
-          Alert.alert("Error", error?.response?.data?.error || "Failed to add to cart");
+          Alert.alert(
+            "Unable to add to cart",
+            error?.response?.data?.error ||
+              error?.response?.data?.message ||
+              error?.message ||
+              "Please try again."
+          );
         },
       }
     );

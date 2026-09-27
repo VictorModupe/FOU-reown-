@@ -15,7 +15,7 @@ export type RequestedRole = "customer" | "vendor";
 export default function useSocialAuth() {
   const [loadingStrategy, setLoadingStrategy] = useState<SocialStrategy | null>(null);
   const { startSSOFlow } = useSSO();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, signOut } = useAuth();
 
   // Faster browser start on Android.
   useEffect(() => {
@@ -29,17 +29,10 @@ export default function useSocialAuth() {
   const handleSocialAuth = useCallback(
     async (strategy: SocialStrategy, role?: RequestedRole) => {
       if (loadingStrategy) return;
-      if (isSignedIn) {
-        Toast.show({
-          type: "error",
-          text1: "Already signed in",
-          text2: "Sign out before starting another social sign-in.",
-        });
-        return;
-      }
       setLoadingStrategy(strategy);
 
       try {
+        if (isSignedIn) await signOut();
         const { createdSessionId, setActive } = await startSSOFlow({
           strategy,
           // Needs a `scheme` in app.json; resolves to <scheme>://oauth-native-callback
@@ -73,7 +66,7 @@ export default function useSocialAuth() {
         setLoadingStrategy(null);
       }
     },
-    [isSignedIn, loadingStrategy, startSSOFlow]
+    [isSignedIn, loadingStrategy, signOut, startSSOFlow]
   );
 
   return { loadingStrategy, handleSocialAuth };

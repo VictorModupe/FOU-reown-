@@ -1,7 +1,6 @@
 import SafeScreen from "@/components/SafeScreen";
 import useCart from "@/hooks/useCart";
 import useWishlist from "@/hooks/useWishlist";
-import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -12,7 +11,6 @@ function WishlistScreen() {
     useWishlist();
 
   const { addToCart, isAddingToCart } = useCart();
-  const { isSignedIn } = useAuth();
 
   const handleRemoveFromWishlist = (productId: string, productName: string) => {
     Alert.alert("Remove from wishlist", `Remove ${productName} from wishlist`, [
@@ -27,14 +25,6 @@ function WishlistScreen() {
   };
 
   const handleAddToCart = (productId: string, productName: string) => {
-    if (!isSignedIn) {
-      Alert.alert("Sign in required", "Please sign in before adding items to your cart.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => router.push("/(routes)/login") },
-      ]);
-      return;
-    }
-
     addToCart(
       { productId, quantity: 1 },
       {

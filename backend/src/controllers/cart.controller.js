@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Cart } from "../models/cart.model.js";
 import { Product } from "../models/product.model.js";
 
@@ -28,10 +29,19 @@ const findGuestCart = (req) => {
   return Cart.findOne({ guestSessionId });
 };
 
-const createCart = (req) => {
+const createCart = async (req) => {
   const owner = getCartOwner(req);
   if (!owner) return null;
-  return Cart.create({ ...owner, items: [] });
+  try {
+    return await Cart.findOneAndUpdate(
+      { clerkId: owner.clerkId },
+      { $setOnInsert: { ...owner, items: [] } },
+      { new: true, upsert: true }
+    );
+  } catch (error) {
+    if (error.code !== 11000) throw error;
+    return Cart.findOne({ clerkId: owner.clerkId });
+  }
 };
 
 export async function getCart(req, res) {
@@ -48,16 +58,29 @@ export async function getCart(req, res) {
     if (req.user) {
       const guestCart = await findGuestCart(req);
       if (guestCart && guestCart._id.toString() !== cart._id.toString()) {
+        const guestProductIds = guestCart.items.map((item) => item.product);
+        const products = await Product.find({ _id: { $in: guestProductIds } }).select("_id stock");
+        const stockByProductId = new Map(
+          products.map((product) => [product._id.toString(), product.stock])
+        );
         const existingProducts = new Map(
           cart.items.map((item) => [item.product.toString(), item])
         );
 
         for (const guestItem of guestCart.items) {
-          const existingItem = existingProducts.get(guestItem.product.toString());
+          const productId = guestItem.product.toString();
+          const stock = stockByProductId.get(productId) ?? 0;
+          const existingItem = existingProducts.get(productId);
+          const mergedQuantity = Math.min(
+            (existingItem?.quantity ?? 0) + guestItem.quantity,
+            stock
+          );
+          if (mergedQuantity < 1) continue;
+
           if (existingItem) {
-            existingItem.quantity += guestItem.quantity;
+            existingItem.quantity = mergedQuantity;
           } else {
-            cart.items.push(guestItem);
+            cart.items.push({ product: guestItem.product, quantity: mergedQuantity });
           }
         }
 
@@ -76,7 +99,14 @@ export async function getCart(req, res) {
 
 export async function addToCart(req, res) {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1 } = req.body || {};
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return res.status(400).json({ error: "Quantity must be a positive integer" });
+    }
+    if (!mongoose.isValidObjectId(productId)) {
+      return res.status(400).json({ error: "A valid product is required" });
+    }
 
     // validate product exists and has stock
     const product = await Product.findById(productId);
@@ -84,38 +114,37 @@ export async function addToCart(req, res) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    if (product.stock < quantity) {
-      return res.status(400).json({ error: "Insufficient stock" });
-    }
-
     if (!getCartOwner(req)) {
       return res.status(400).json({ error: "A guest session is required" });
     }
 
-    let cart = await findCart(req);
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      let cart = await findCart(req);
+      if (!cart) cart = await createCart(req);
+      if (!cart) return res.status(400).json({ error: "A guest session is required" });
 
-    if (!cart) {
-      cart = await createCart(req);
-    }
-
-    // check if item already in the cart
-    const existingItem = cart.items.find((item) => item.product.toString() === productId);
-    if (existingItem) {
-      // increment quantity by 1
-      const newQuantity = existingItem.quantity + 1;
+      const existingItem = cart.items.find((item) => item.product.toString() === productId);
+      const newQuantity = (existingItem?.quantity ?? 0) + quantity;
       if (product.stock < newQuantity) {
         return res.status(400).json({ error: "Insufficient stock" });
       }
-      existingItem.quantity = newQuantity;
-    } else {
-      // add new item
-      cart.items.push({ product: productId, quantity });
+
+      if (existingItem) {
+        existingItem.quantity = newQuantity;
+      } else {
+        cart.items.push({ product: productId, quantity });
+      }
+
+      try {
+        await cart.save();
+        await cart.populate("items.product");
+        return res.status(200).json({ message: "Item added to cart", cart });
+      } catch (error) {
+        if (error.name !== "VersionError" || attempt === 2) throw error;
+      }
     }
 
-    await cart.save();
-
-    await cart.populate("items.product");
-    res.status(200).json({ message: "Item added to cart", cart });
+    return res.status(409).json({ error: "Cart changed repeatedly. Please try again." });
   } catch (error) {
     console.error("Error in addToCart controller:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -127,8 +156,11 @@ export async function updateCartItem(req, res) {
     const { productId } = req.params;
     const { quantity } = req.body;
 
-    if (quantity < 1) {
-      return res.status(400).json({ error: "Quantity must be at least 1" });
+    if (!mongoose.isValidObjectId(productId)) {
+      return res.status(400).json({ error: "A valid product is required" });
+    }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return res.status(400).json({ error: "Quantity must be a positive integer" });
     }
 
     const cart = await findCart(req);
@@ -153,6 +185,7 @@ export async function updateCartItem(req, res) {
 
     cart.items[itemIndex].quantity = quantity;
     await cart.save();
+    await cart.populate("items.product");
 
     res.status(200).json({ message: "Cart updated successfully", cart });
   } catch (error) {
@@ -164,6 +197,9 @@ export async function updateCartItem(req, res) {
 export async function removeFromCart(req, res) {
   try {
     const { productId } = req.params;
+    if (!mongoose.isValidObjectId(productId)) {
+      return res.status(400).json({ error: "A valid product is required" });
+    }
 
     const cart = await findCart(req);
     if (!cart) {
@@ -172,6 +208,7 @@ export async function removeFromCart(req, res) {
 
     cart.items = cart.items.filter((item) => item.product.toString() !== productId);
     await cart.save();
+    await cart.populate("items.product");
 
     res.status(200).json({ message: "Item removed from cart", cart });
   } catch (error) {
@@ -189,6 +226,7 @@ export const clearCart = async (req, res) => {
 
     cart.items = [];
     await cart.save();
+    await cart.populate("items.product");
 
     res.status(200).json({ message: "Cart cleared", cart });
   } catch (error) {

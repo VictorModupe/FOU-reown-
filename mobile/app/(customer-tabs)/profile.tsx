@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
+import useCurrentUser from "@/hooks/useCurrentUser";
 
 const MENU_ITEMS = [
   { id: 1, icon: "person-outline", title: "Edit Profile", color: "#3B82F6", action: "/profile" },
@@ -20,16 +21,13 @@ const MENU_ITEMS = [
 const ProfileScreen = () => {
   const { isSignedIn, signOut } = useAuth();
   const { user } = useUser();
+  const { data: account } = useCurrentUser();
   const { isDark, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
+  const displayName = user?.fullName?.trim() || account?.name || "Name not set";
+  const displayEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses[0]?.emailAddress || account?.email || "Email unavailable";
 
-  const handleMenuPress = (action: (typeof MENU_ITEMS)[number]["action"]) => {
-    if (action === "/orders" && !isSignedIn) {
-      router.push("/(routes)/login");
-      return;
-    }
-    router.push(action);
-  };
+  const handleMenuPress = (action: (typeof MENU_ITEMS)[number]["action"]) => router.push(action);
 
   const handleSignOut = async () => {
     queryClient.clear();
@@ -55,7 +53,7 @@ const ProfileScreen = () => {
             <View className="flex-row items-center">
               <View className="relative">
                 <Image
-                  source={user?.imageUrl}
+                  source={user?.imageUrl || account?.imageUrl}
                   style={{ width: 80, height: 80, borderRadius: 40 }}
                   transition={200}
                 />
@@ -66,10 +64,13 @@ const ProfileScreen = () => {
 
               <View className="flex-1 ml-4">
                 <Text className="text-text-primary text-2xl font-bold mb-1">
-                  {user?.firstName} {user?.lastName}
+                  {displayName}
                 </Text>
                 <Text className="text-text-secondary text-sm">
-                  {user?.emailAddresses?.[0]?.emailAddress || "No email"}
+                  {displayEmail}
+                </Text>
+                <Text className="text-text-secondary text-xs mt-1">
+                  {isSignedIn ? "Signed in" : "Guest session"}
                 </Text>
               </View>
             </View>
@@ -149,7 +150,14 @@ const ProfileScreen = () => {
         >
           <Ionicons name="log-out-outline" size={22} color="#EF4444" />
           <Text className="text-red-500 font-bold text-base ml-2">Sign Out</Text>
-        </TouchableOpacity> : null}
+        </TouchableOpacity> : <TouchableOpacity
+          className="mx-6 mb-3 bg-primary rounded-2xl py-5 flex-row items-center justify-center"
+          activeOpacity={0.8}
+          onPress={() => router.push("/(routes)/login")}
+        >
+          <Ionicons name="log-in-outline" size={22} color="#121212" />
+          <Text className="text-background font-bold text-base ml-2">Sign In</Text>
+        </TouchableOpacity>}
 
         <Text className="mx-6 mb-3 text-center text-text-secondary text-xs">Version 1.0.0</Text>
       </ScrollView>

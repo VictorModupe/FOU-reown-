@@ -40,6 +40,16 @@ export interface Address {
   isDefault: boolean;
 }
 
+export interface CheckoutAddress {
+  email?: string;
+  fullName: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phoneNumber: string;
+}
+
 export interface FlutterwaveInitCustomer {
   email: string;
   phonenumber?: string;
@@ -111,10 +121,12 @@ export interface FlutterwaveInitSubAccount {
 
 export interface Order {
   _id: string;
-  user: string;
+  user?: string;
   clerkId: string;
+  guestSessionId?: string;
   orderItems: OrderItem[];
   shippingAddress: {
+    email?: string;
     fullName: string;
     streetAddress: string;
     city: string;

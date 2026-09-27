@@ -1,6 +1,7 @@
 import { Order } from "../models/order.model.js";
 import { Product } from "../models/product.model.js";
 import { Review } from "../models/review.model.js";
+import { getGuestSessionId } from "../lib/guest-session.js";
 
 export async function createOrder(req, res) {
   try {
@@ -69,6 +70,26 @@ export async function getUserOrders(req, res) {
     res.status(200).json({ orders: ordersWithReviewStatus });
   } catch (error) {
     console.error("Error in getUserOrders controller:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function getGuestOrders(req, res) {
+  try {
+    const guestSessionId = getGuestSessionId(req);
+    if (!guestSessionId) {
+      return res.status(400).json({ error: "A valid guest session is required" });
+    }
+
+    const orders = await Order.find({ guestSessionId })
+      .populate("orderItems.product")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      orders: orders.map((order) => ({ ...order.toObject(), hasReviewed: false })),
+    });
+  } catch (error) {
+    console.error("Error in getGuestOrders controller:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

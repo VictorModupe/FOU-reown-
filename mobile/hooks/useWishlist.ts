@@ -6,19 +6,22 @@ import { useAuth } from "@clerk/clerk-expo";
 const useWishlist = () => {
   const api = useApi();
   const queryClient = useQueryClient();
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const wishlistQueryKey = ["wishlist", userId ?? "guest"];
 
   const {
     data: wishlist,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["wishlist"],
+    queryKey: wishlistQueryKey,
     queryFn: async () => {
+      if (!isSignedIn) return [];
       const { data } = await api.get<{ wishlist: Product[] }>("/users/wishlist");
-      return data.wishlist;
+      return Array.isArray(data?.wishlist) ? data.wishlist : [];
     },
-    enabled: isSignedIn,
+    enabled: isLoaded,
+    retry: false,
   });
 
   const addToWishlistMutation = useMutation({
@@ -26,7 +29,7 @@ const useWishlist = () => {
       const { data } = await api.post<{ wishlist: string[] }>("/users/wishlist", { productId });
       return data.wishlist;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: wishlistQueryKey }),
   });
 
   const removeFromWishlistMutation = useMutation({
@@ -34,7 +37,7 @@ const useWishlist = () => {
       const { data } = await api.delete<{ wishlist: string[] }>(`/users/wishlist/${productId}`);
       return data.wishlist;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: wishlistQueryKey }),
   });
 
   const isInWishlist = (productId: string) => {
@@ -42,6 +45,7 @@ const useWishlist = () => {
   };
 
   const toggleWishlist = (productId: string) => {
+    if (!isSignedIn) return;
     if (isInWishlist(productId)) {
       removeFromWishlistMutation.mutate(productId);
     } else {

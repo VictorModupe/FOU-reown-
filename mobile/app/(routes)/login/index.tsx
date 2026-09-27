@@ -16,7 +16,7 @@ interface LoginFormData {
 export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
-    const { isLoaded: authLoaded, isSignedIn } = useAuth();
+    const { isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
     const { isLoaded, signIn, setActive } = useSignIn();
     const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
     const { loadingStrategy, handleSocialAuth } = useSocialAuth();
@@ -31,31 +31,38 @@ export default function LoginScreen() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // useEffect(() => {
-    //     if (!authLoaded || !isSignedIn || isUserLoading) return;
-    //     // router.replace(currentUser?.role === "vendor" ? "/(vendor-tabs)" : "/(customer-tabs)");
-    //     router.replace("/(vendor-tabs)")
+    useEffect(() => {
+        if (!authLoaded || !isSignedIn || isUserLoading || !currentUser) return;
+        router.replace(currentUser.role === "vendor" ? "/(vendor-tabs)" : "/(customer-tabs)");
+    }, [authLoaded, currentUser, isSignedIn, isUserLoading, router]);
 
-    // }, [authLoaded, currentUser?.role, isSignedIn, isUserLoading, router]);
-
-    // if (!authLoaded || (isSignedIn && isUserLoading)) return null;
+    if (!authLoaded || (isSignedIn && isUserLoading)) return null;
 
     const onLoginSubmit = async ({ email, password }: LoginFormData) => {
-        // if (!isLoaded || !signIn) return;
-        // setIsSubmitting(true);
-        // try {
-        //     const result = await signIn.create({ identifier: email, password });
-        //     if (result.status !== "complete" || !result.createdSessionId) {
-        //         throw new Error("Additional verification is required for this account.");
-        //     }
-        //     await setActive({ session: result.createdSessionId });
-        //     toast.success("Login successful");
-            router.replace("/(vendor-tabs)");
-        // } catch (error: any) {
-        //     toast.error(error?.errors?.[0]?.longMessage || error?.message || "Unable to sign in");
-        // } finally {
-        //     setIsSubmitting(false);
-        // }
+        if (!isLoaded || !signIn) return;
+        setIsSubmitting(true);
+        try {
+            if (isSignedIn) await signOut();
+            const result = await signIn.create({ identifier: email.trim(), password });
+            if (result.status !== "complete" || !result.createdSessionId) {
+                const verificationMessage = result.status === "needs_second_factor"
+                    ? "This account has extra security enabled. Complete the second verification step or use an account without MFA for testing."
+                    : "This account needs email verification before you can sign in. Complete verification and try again.";
+                throw new Error(verificationMessage);
+            }
+            await setActive({ session: result.createdSessionId });
+            toast.success("Login successful");
+        } catch (error: any) {
+            const clerkError = error?.errors?.[0];
+            const identifierNotFound = ["form_identifier_not_found", "identifier_not_found"].includes(clerkError?.code);
+            toast.error(
+                identifierNotFound
+                    ? "We couldn't find an account with that email. Check the address or sign up to create an account."
+                    : clerkError?.longMessage || error?.message || "Unable to sign in"
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     const handleSignUpNavigation = () => {
         router.push("/(routes)/signup");

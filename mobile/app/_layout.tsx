@@ -6,7 +6,7 @@ import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Providers from "@/config/providers";
@@ -75,26 +75,32 @@ const styles = StyleSheet.create({
 function ThemeRoot() {
   const { themeVariables } = useTheme();
   const { isLoaded, isSignedIn, signOut } = useAuth();
-  const [sessionCleared, setSessionCleared] = useState(false);
+  const [sessionResetReady, setSessionResetReady] = useState(false);
+  const sessionResetStarted = useRef(false);
 
   useEffect(() => {
-    if (!isLoaded || sessionCleared) return;
+    if (!isLoaded || sessionResetStarted.current) return;
+    sessionResetStarted.current = true;
 
-    if (!isSignedIn) {
-      setSessionCleared(true);
-      return;
-    }
+    const resetSession = async () => {
+      try {
+        if (isSignedIn) await signOut();
+        setSessionResetReady(true);
+      } catch (error) {
+        console.error("Unable to clear the auth session on startup", error);
+      }
+    };
 
-    void signOut().finally(() => setSessionCleared(true));
-  }, [isLoaded, isSignedIn, sessionCleared, signOut]);
+    void resetSession();
+  }, [isLoaded, isSignedIn, signOut]);
 
-  if (!isLoaded || !sessionCleared) return null;
+  if (!isLoaded || !sessionResetReady) return null;
 
   return (
     <View className="flex-1" style={themeVariables}>
       <GestureHandlerRootView style={styles.root}>
         <Providers>
-          <Stack initialRouteName="onboarding/index" screenOptions={{ headerShown: false }}>
+          <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="onboarding/index" />
             {/* <Stack.Screen name="(customer-tabs)" />
             <Stack.Screen name="(vendor-tabs)" /> */}

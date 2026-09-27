@@ -32,7 +32,7 @@ const cartSchema = new mongoose.Schema(
     },
     items: [cartItemSchema],
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 export const Cart = mongoose.model("Cart", cartSchema);

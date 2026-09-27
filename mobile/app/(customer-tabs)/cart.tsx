@@ -1,10 +1,9 @@
 import SafeScreen from "@/components/SafeScreen";
-import { useAddresses } from "@/hooks/useAddressess";
 import useCart from "@/hooks/useCart";
 import { useApi } from "@/lib/api";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
-import { Address } from "@/types";
+import { CheckoutAddress } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import OrderSummary from "@/components/OrderSummary";
@@ -14,17 +13,14 @@ import { PayWithFlutterwave } from "flutterwave-react-native";
 import type { RedirectParams } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
 
 const CartScreen = () => {
-  const { isSignedIn } = useAuth();
   const api = useApi();
   const queryClient = useQueryClient();
   const {
     cart,
     cartItemCount,
     cartTotal,
-    clearCartAsync,
     isError,
     isLoading,
     isRemoving,
@@ -32,11 +28,10 @@ const CartScreen = () => {
     removeFromCart,
     updateQuantity,
   } = useCart();
-  const { addresses } = useAddresses();
-
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [paymentOptions, setPaymentOptions] = useState<React.ComponentProps<typeof PayWithFlutterwave>["options"] | null>(null);
+  const [pendingTransactionId, setPendingTransactionId] = useState<string | null>(null);
 
   const cartItems = cart?.items || [];
   const subtotal = cartTotal;
@@ -48,7 +43,13 @@ const CartScreen = () => {
     const newQuantity = currentQuantity + change;
     if (newQuantity < 1) return;
     setPaymentOptions(null);
-    updateQuantity({ productId, quantity: newQuantity });
+    updateQuantity(
+      { productId, quantity: newQuantity },
+      {
+        onError: (error: any) =>
+          Alert.alert("Cart update failed", error?.response?.data?.error || "Please try again."),
+      }
+    );
   };
 
   const handleRemoveItem = (productId: string, productName: string) => {
@@ -59,7 +60,10 @@ const CartScreen = () => {
         style: "destructive",
         onPress: () => {
           setPaymentOptions(null);
-          removeFromCart(productId);
+          removeFromCart(productId, {
+            onError: (error: any) =>
+              Alert.alert("Remove failed", error?.response?.data?.error || "Please try again."),
+          });
         },
       },
     ]);
@@ -67,42 +71,19 @@ const CartScreen = () => {
 
   const handleCheckout = () => {
     if (cartItems.length === 0) return;
-
-    if (!isSignedIn) {
-      Alert.alert("Sign in required", "Please sign in before completing your purchase.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => router.push("/(routes)/login") },
-      ]);
-      return;
-    }
-
-    // check if user has addresses
-    if (!addresses || addresses.length === 0) {
-      Alert.alert(
-        "No Address",
-        "Please add a shipping address in your profile before checking out.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Add address", onPress: () => router.push("/addresses") },
-        ]
-      );
-      return;
-    }
-
-    // show address selection modal
     setAddressModalVisible(true);
   };
 
-  const handleProceedWithPayment = async (selectedAddress: Address) => {
-    setAddressModalVisible(false);
+  const handleProceedWithPayment = async (selectedAddress: CheckoutAddress) => {
     await handlePayment(selectedAddress);
   };
 
-  const handlePayment = async (address: Address) => {
+  const handlePayment = async (address: CheckoutAddress) => {
     setPaymentLoading(true);
 
     try {
       const shippingAddress = {
+        email: address.email,
         fullName: address.fullName,
         streetAddress: address.streetAddress,
         city: address.city,
@@ -111,14 +92,54 @@ const CartScreen = () => {
         phoneNumber: address.phoneNumber,
       };
 
-      const { data } = await api.post("/payment/flutterwave", { cartItems, shippingAddress });
+      const { data } = await api.post("/payment/flutterwave", { shippingAddress });
       setPaymentOptions(data.options);
+      setAddressModalVisible(false);
     } catch (error: any) {
       Toast.show({
         type: "error",
         text1: "Payment failed",
         text2: error?.response?.data?.error || error?.message || "Please try again.",
       });
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const verifyTransaction = async (transactionId: string) => {
+    setPaymentLoading(true);
+    try {
+      const { data: verification } = await api.post("/payment/flutterwave/verify", {
+        transactionId,
+      });
+
+      setPendingTransactionId(null);
+      await queryClient.invalidateQueries({ queryKey: ["cart"] });
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+      Toast.show({
+        type: "success",
+        text1: "Payment successful",
+        text2: `Order #${String(verification.orderId).slice(-8).toUpperCase()} is being prepared.`,
+      });
+      router.push("/orders");
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const terminalFailure = status >= 400 && status < 500 && status !== 408 && status !== 429;
+      if (terminalFailure) {
+        setPendingTransactionId(null);
+        Toast.show({
+          type: "error",
+          text1: "Payment needs attention",
+          text2: error?.response?.data?.error || "Please contact support before trying to pay again.",
+        });
+      } else {
+        setPendingTransactionId(transactionId);
+        Toast.show({
+          type: "error",
+          text1: "Order confirmation pending",
+          text2: "Flutterwave reported success, but confirmation could not finish. Retry confirmation; do not pay again.",
+        });
+      }
     } finally {
       setPaymentLoading(false);
     }
@@ -131,30 +152,8 @@ const CartScreen = () => {
       return;
     }
 
-    setPaymentLoading(true);
-    try {
-      const { data: verification } = await api.post("/payment/flutterwave/verify", {
-        transactionId: result.transaction_id,
-      });
-
-      try {
-        await clearCartAsync();
-      } catch {
-        await queryClient.invalidateQueries({ queryKey: ["cart"] });
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["orders"] });
-      Toast.show({
-        type: "success",
-        text1: "Payment successful",
-        text2: `Order #${String(verification.orderId).slice(-8).toUpperCase()} is being prepared.`,
-      });
-      router.push("/orders");
-    } catch (error: any) {
-      Toast.show({ type: "error", text1: "Payment verification failed", text2: error?.response?.data?.error || "Please contact support." });
-    } finally {
-      setPaymentLoading(false);
-    }
+    setPendingTransactionId(result.transaction_id);
+    await verifyTransaction(result.transaction_id);
   };
 
   if (isLoading) return <LoadingUI />;
@@ -272,7 +271,22 @@ const CartScreen = () => {
         </View>
 
         {/* Checkout Button */}
-        {paymentOptions ? (
+        {pendingTransactionId ? (
+          <TouchableOpacity
+            className="bg-primary rounded-2xl overflow-hidden"
+            activeOpacity={0.9}
+            onPress={() => void verifyTransaction(pendingTransactionId)}
+            disabled={paymentLoading}
+          >
+            <View className="py-5 flex-row items-center justify-center">
+              {paymentLoading ? (
+                <ActivityIndicator size="small" color="#8264A9" />
+              ) : (
+                <Text className="text-background font-bold text-lg">Retry order confirmation</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        ) : paymentOptions ? (
           <PayWithFlutterwave
             options={paymentOptions}
             onRedirect={handleFlutterwaveRedirect}

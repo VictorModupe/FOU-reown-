@@ -9,7 +9,7 @@ interface VendorProductsGridProps {
 }
 
 const VendorProductsGrid = (props: VendorProductsGridProps) => {
-  return <ProductsGrid {...props} requiresAuth={false} cartRoute="/(vendor-tabs)/cart" />;
+  return <ProductsGrid {...props} cartRoute="/(vendor-tabs)/cart" />;
 };
 
 export default VendorProductsGrid;

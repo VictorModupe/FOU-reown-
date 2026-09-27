@@ -1,13 +1,13 @@
 import { useAddresses } from "@/hooks/useAddressess";
-import { Address } from "@/types";
+import { Address, CheckoutAddress } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { View, Text, Modal, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Modal, TouchableOpacity, ScrollView, ActivityIndicator, TextInput } from "react-native";
 
 interface AddressSelectionModalProps {
   visible: boolean;
   onClose: () => void;
-  onProceed: (address: Address) => void;
+  onProceed: (address: CheckoutAddress) => void;
   isProcessing: boolean;
 }
 
@@ -18,15 +18,46 @@ const AddressSelectionModal = ({
   isProcessing,
 }: AddressSelectionModalProps) => {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [shippingAddress, setShippingAddress] = useState<CheckoutAddress>({
+    email: "",
+    fullName: "",
+    streetAddress: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    phoneNumber: "",
+  });
   const { addresses, isLoading: addressesLoading } = useAddresses();
+  const hasSavedAddresses = addresses.length > 0;
+  const shippingAddressIsValid =
+    Boolean(shippingAddress.email?.trim()) &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingAddress.email?.trim() || "") &&
+    [
+      shippingAddress.fullName,
+      shippingAddress.streetAddress,
+      shippingAddress.city,
+      shippingAddress.state,
+      shippingAddress.zipCode,
+      shippingAddress.phoneNumber,
+    ].every((value) => value.trim().length > 0);
+
+  const handleContinue = () => {
+    if (hasSavedAddresses && selectedAddress) {
+      onProceed(selectedAddress);
+    } else if (!hasSavedAddresses && shippingAddressIsValid) {
+      onProceed(shippingAddress);
+    }
+  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-background rounded-t-3xl h-1/2">
+        <View className={`bg-background rounded-t-3xl ${hasSavedAddresses ? "h-1/2" : "h-5/6"}`}>
           {/* Modal Header */}
           <View className="flex-row items-center justify-between p-6 border-b border-surface">
-            <Text className="text-text-primary text-2xl font-bold">Select Address</Text>
+            <Text className="text-text-primary text-2xl font-bold">
+              {hasSavedAddresses ? "Select Address" : "Shipping Details"}
+            </Text>
             <TouchableOpacity onPress={onClose} className="bg-surface rounded-full p-2">
               <Ionicons name="close" size={24} color="#FFFFFF" />
             </TouchableOpacity>
@@ -37,6 +68,32 @@ const AddressSelectionModal = ({
             {addressesLoading ? (
               <View className="py-8">
                 <ActivityIndicator size="large" color="#00D9FF" />
+              </View>
+            ) : !hasSavedAddresses ? (
+              <View className="gap-3">
+                {([
+                  ["email", "Email address", "email-address"],
+                  ["fullName", "Full name", "default"],
+                  ["streetAddress", "Street address", "default"],
+                  ["city", "City", "default"],
+                  ["state", "State / province", "default"],
+                  ["zipCode", "ZIP / postal code", "default"],
+                  ["phoneNumber", "Phone number", "phone-pad"],
+                ] as const).map(([field, label, keyboardType]) => (
+                  <TextInput
+                    key={field}
+                    className="bg-surface text-text-primary px-4 py-3 rounded-xl"
+                    placeholder={label}
+                    placeholderTextColor="#888"
+                    value={shippingAddress[field]}
+                    onChangeText={(value) =>
+                      setShippingAddress((current) => ({ ...current, [field]: value }))
+                    }
+                    keyboardType={keyboardType}
+                    autoCapitalize={field === "email" ? "none" : "words"}
+                    autoComplete={field === "email" ? "email" : "off"}
+                  />
+                ))}
               </View>
             ) : (
               <View className="gap-4">
@@ -90,10 +147,12 @@ const AddressSelectionModal = ({
             <TouchableOpacity
               className="bg-primary rounded-2xl py-5"
               activeOpacity={0.9}
-              onPress={() => {
-                if (selectedAddress) onProceed(selectedAddress);
-              }}
-              disabled={!selectedAddress || isProcessing}
+              onPress={handleContinue}
+              disabled={
+                isProcessing ||
+                addressesLoading ||
+                (hasSavedAddresses ? !selectedAddress : !shippingAddressIsValid)
+              }
             >
               <View className="flex-row items-center justify-center">
                 {isProcessing ? (

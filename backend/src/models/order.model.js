@@ -27,6 +27,10 @@ const orderItemSchema = new mongoose.Schema({
 });
 
 const shippingAddressSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: false,
+  },
   fullName: {
     type: String,
     required: true,
@@ -58,11 +62,21 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
     },
     clerkId: {
       type: String,
       required: true,
+    },
+    guestSessionId: {
+      type: String,
+      required: false,
+    },
+    checkoutSession: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CheckoutSession",
+      unique: true,
+      sparse: true,
     },
     orderItems: [orderItemSchema],
     shippingAddress: {

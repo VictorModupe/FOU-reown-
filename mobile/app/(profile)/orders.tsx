@@ -2,6 +2,7 @@ import RatingModal from "@/components/RatingModal";
 import SafeScreen from "@/components/SafeScreen";
 import { useOrders } from "@/hooks/useOrders";
 import { useReviews } from "@/hooks/useReviews";
+import { useAuth } from "@clerk/clerk-expo";
 import { capitalizeFirstLetter, formatDate, getStatusColor } from "@/lib/utils";
 import { Order } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,6 +12,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 function OrdersScreen() {
+  const { isSignedIn } = useAuth();
   const { data: orders, isLoading, isError } = useOrders();
   const { createReviewAsync, isCreatingReview } = useReviews();
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -110,7 +112,7 @@ function OrdersScreen() {
                       <Text className="text-text-secondary text-xs mb-1">{totalItems} items</Text>
                       <Text className="text-primary font-bold text-xl">${order.totalPrice.toFixed(2)}</Text>
                     </View>
-                    {order.status === "delivered" &&
+                    {order.status === "delivered" && isSignedIn &&
                       (order.hasReviewed ? (
                         <View className="bg-primary/20 px-5 py-3 rounded-full flex-row items-center">
                           <Ionicons name="checkmark-circle" size={18} color="#1DB954" />

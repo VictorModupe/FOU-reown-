@@ -24,6 +24,9 @@ api.interceptors.response.use(
       url: config.url,
       status: response.status,
       durationMs,
+      ...(config.url?.replace(/\?.*$/, "").endsWith("/cart")
+        ? { cartItemCount: response.data?.cart?.items?.length ?? null }
+        : {}),
     });
     return response;
   },

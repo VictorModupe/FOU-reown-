@@ -9,7 +9,7 @@ interface CustomerProductsGridProps {
 }
 
 const CustomerProductsGrid = (props: CustomerProductsGridProps) => {
-  return <ProductsGrid {...props} requiresAuth={false} cartRoute="/(customer-tabs)/cart" />;
+  return <ProductsGrid {...props} cartRoute="/(customer-tabs)/cart" />;
 };
 
 export default CustomerProductsGrid;

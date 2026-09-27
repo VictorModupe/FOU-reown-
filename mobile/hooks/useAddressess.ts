@@ -6,19 +6,20 @@ import { useAuth } from "@clerk/clerk-expo";
 export const useAddresses = () => {
   const api = useApi();
   const queryClient = useQueryClient();
-  const { isSignedIn } = useAuth();
+  const { userId } = useAuth();
+  const addressesQueryKey = ["addresses", userId ?? "guest"];
 
   const {
     data: addresses,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["addresses"],
+    queryKey: addressesQueryKey,
     queryFn: async () => {
       const { data } = await api.get<{ addresses: Address[] }>("/users/addresses");
       return data.addresses;
     },
-    enabled: isSignedIn,
+    retry: false,
   });
 
   const addAddressMutation = useMutation({
@@ -27,7 +28,7 @@ export const useAddresses = () => {
       return data.addresses;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      queryClient.invalidateQueries({ queryKey: addressesQueryKey });
     },
   });
 
@@ -46,7 +47,7 @@ export const useAddresses = () => {
       return data.addresses;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      queryClient.invalidateQueries({ queryKey: addressesQueryKey });
     },
   });
 
@@ -56,7 +57,7 @@ export const useAddresses = () => {
       return data.addresses;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      queryClient.invalidateQueries({ queryKey: addressesQueryKey });
     },
   });
 
