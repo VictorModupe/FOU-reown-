@@ -1,12 +1,17 @@
 import { Order } from "../models/order.model.js";
 import { Product } from "../models/product.model.js";
 import { Review } from "../models/review.model.js";
+import mongoose from "mongoose";
 
 export async function createReview(req, res) {
   try {
     const { productId, orderId, rating } = req.body;
 
-    if (!rating || rating < 1 || rating > 5) {
+    if (!mongoose.isValidObjectId(productId) || !mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({ error: "Invalid product or order" });
+    }
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating must be between 1 and 5" });
     }
 
@@ -34,9 +39,13 @@ export async function createReview(req, res) {
       return res.status(400).json({ error: "Product not found in this order" });
     }
 
-    // atomic update or create
+    const productExists = await Product.exists({ _id: productId });
+    if (!productExists) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
     const review = await Review.findOneAndUpdate(
-      { productId, userId: user._id },
+      { productId, orderId, userId: user._id },
       { rating, orderId, productId, userId: user._id },
       { new: true, upsert: true, runValidators: true }
     );
@@ -53,12 +62,7 @@ export async function createReview(req, res) {
       { new: true, runValidators: true }
     );
 
-    if (!updatedProduct) {
-      await Review.findByIdAndDelete(review._id);
-      return res.status(404).json({ error: "Product not found" });
-    }
-
-    res.status(201).json({ message: "Review submitted successfully", review });
+    res.status(201).json({ message: "Review submitted successfully", review, product: updatedProduct });
   } catch (error) {
     console.error("Error in createReview controller:", error);
     res.status(500).json({ error: "Internal server error" });

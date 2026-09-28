@@ -55,17 +55,22 @@ export async function getUserOrders(req, res) {
     // check if each order has been reviewed
 
     const orderIds = orders.map((order) => order._id);
-    const reviews = await Review.find({ orderId: { $in: orderIds } });
-    const reviewedOrderIds = new Set(reviews.map((review) => review.orderId.toString()));
+    const reviews = await Review.find({ orderId: { $in: orderIds } }).select("orderId productId");
+    const reviewedProductsByOrder = new Map();
+    for (const review of reviews) {
+      const orderId = review.orderId.toString();
+      const productIds = reviewedProductsByOrder.get(orderId) ?? new Set();
+      productIds.add(review.productId.toString());
+      reviewedProductsByOrder.set(orderId, productIds);
+    }
 
-    const ordersWithReviewStatus = await Promise.all(
-      orders.map(async (order) => {
-        return {
-          ...order.toObject(),
-          hasReviewed: reviewedOrderIds.has(order._id.toString()),
-        };
-      })
-    );
+    const ordersWithReviewStatus = orders.map((order) => {
+      const reviewedProductIds = reviewedProductsByOrder.get(order._id.toString()) ?? new Set();
+      const hasReviewed = order.orderItems.every((item) =>
+        reviewedProductIds.has(item.product._id.toString())
+      );
+      return { ...order.toObject(), hasReviewed };
+    });
 
     res.status(200).json({ orders: ordersWithReviewStatus });
   } catch (error) {

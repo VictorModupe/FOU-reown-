@@ -43,14 +43,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           "--color-text-tertiary": "106 106 106",
         }
       : {
-          "--color-background": "247 248 250",
-          "--color-background-light": "255 255 255",
-          "--color-background-lighter": "235 237 240",
-          "--color-surface": "255 255 255",
-          "--color-surface-light": "225 228 232",
-          "--color-text-primary": "20 24 31",
-          "--color-text-secondary": "91 99 110",
-          "--color-text-tertiary": "128 136 147",
+          "--color-background": "239 233 243",
+          "--color-background-light": "251 248 253",
+          "--color-background-lighter": "229 220 236",
+          "--color-surface": "255 254 255",
+          "--color-surface-light": "219 208 227",
+          "--color-text-primary": "42 30 45",
+          "--color-text-secondary": "93 79 101",
+          "--color-text-tertiary": "101 89 108",
         }
   );
 

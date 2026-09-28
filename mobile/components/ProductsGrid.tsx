@@ -69,18 +69,20 @@ const ProductsGrid = ({
         />
 
         <TouchableOpacity
-          className="absolute top-3 right-3 bg-black/30 backdrop-blur-xl p-2 rounded-full"
+          className="absolute top-3 right-3 rounded-full bg-surface p-2"
           activeOpacity={0.7}
           onPress={() => toggleWishlist(product._id)}
           disabled={isAddingToWishlist || isRemovingFromWishlist}
+          accessibilityRole="button"
+          accessibilityLabel={`${isInWishlist(product._id) ? "Remove" : "Add"} ${product.name} ${isInWishlist(product._id) ? "from" : "to"} wishlist`}
         >
           {isAddingToWishlist || isRemovingFromWishlist ? (
-            <ActivityIndicator size="small" color="#F9FFFF" />
+            <ActivityIndicator size="small" color="#4F2B50" />
           ) : (
             <Ionicons
               name={isInWishlist(product._id) ? "heart" : "heart-outline"}
               size={18}
-              color={isInWishlist(product._id) ? "#FF6B6B" : "#FFFFFF"}
+              color={isInWishlist(product._id) ? "#BA3654" : "#4F2B50"}
             />
           )}
         </TouchableOpacity>
@@ -104,18 +106,20 @@ const ProductsGrid = ({
           <Text className="text-primary font-bold text-lg">${product.price.toFixed(2)}</Text>
 
           <TouchableOpacity
-            className="bg-primary rounded-full w-8 h-8 items-center justify-center"
+            className="bg-primary rounded-full w-10 h-10 items-center justify-center"
             activeOpacity={0.7}
             onPress={(event) => {
               event.stopPropagation();
               handleAddToCart(product._id, product.name);
             }}
             disabled={isAddingToCart}
+            accessibilityRole="button"
+            accessibilityLabel={`Add ${product.name} to cart`}
           >
             {isAddingToCart ? (
-              <ActivityIndicator size="small" color="#121212" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Ionicons name="add" size={18} color="#121212" />
+              <Ionicons name="add" size={24} color="#FFFFFF" />
             )}
           </TouchableOpacity>
         </View>
@@ -126,7 +130,7 @@ const ProductsGrid = ({
   if (isLoading) {
     return (
       <View className="py-20 items-center justify-center">
-        <ActivityIndicator size="large" color="#00D9FF" />
+        <ActivityIndicator size="large" color="#4F2B50" />
         <Text className="text-text-secondary mt-4">Loading products...</Text>
       </View>
     );

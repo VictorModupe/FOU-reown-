@@ -1,5 +1,6 @@
 import SafeScreen from "@/components/SafeScreen";
 import useCart from "@/hooks/useCart";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { useProduct } from "@/hooks/useProduct";
 import useWishlist from "@/hooks/useWishlist";
 import { useCreateOffer } from "@/hooks/useOffers";
@@ -24,6 +25,7 @@ const { width } = Dimensions.get("window");
 const ProductDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isError, isLoading } = useProduct(id);
+  const { data: currentUser } = useCurrentUser();
   const { addToCart, isAddingToCart } = useCart();
   const segments = useSegments();
   const cartRoute = (segments as readonly string[]).includes("(vendor-tabs)")
@@ -77,6 +79,7 @@ const ProductDetailScreen = () => {
   if (isError || !product) return <ErrorUI />;
 
   const inStock = product.stock > 0;
+  const canMakeOffer = currentUser?.role === "customer" && Boolean(product.vendor) && inStock;
 
   return (
     <SafeScreen>
@@ -104,7 +107,7 @@ const ProductDetailScreen = () => {
             <Ionicons
               name={isInWishlist(product._id) ? "heart" : "heart-outline"}
               size={24}
-              color={isInWishlist(product._id) ? "#121212" : "#FFFFFF"}
+              color="#FFFFFF"
             />
           )}
         </TouchableOpacity>
@@ -186,9 +189,15 @@ const ProductDetailScreen = () => {
           {/* Price */}
           <View className="flex-row items-center mb-6">
             <Text className="text-primary text-4xl font-bold">${product.price.toFixed(2)}</Text>
-            <TouchableOpacity className="ml-4 rounded-full border border-primary px-4 py-2" onPress={() => setOfferVisible(true)} disabled={!inStock}>
-              <Text className="text-primary font-bold">Make an offer</Text>
-            </TouchableOpacity>
+            {canMakeOffer ? (
+              <TouchableOpacity
+                className="ml-4 rounded-full border border-primary px-4 py-2"
+                onPress={() => setOfferVisible(true)}
+                accessibilityRole="button"
+              >
+                <Text className="text-primary font-bold">Make an offer</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           {/* Quantity */}
@@ -197,18 +206,18 @@ const ProductDetailScreen = () => {
 
             <View className="flex-row items-center">
               <TouchableOpacity
-                className="bg-surface rounded-full w-12 h-12 items-center justify-center"
+                className="bg-background-lighter rounded-full w-12 h-12 items-center justify-center"
                 onPress={() => setQuantity(Math.max(1, quantity - 1))}
                 activeOpacity={0.7}
                 disabled={!inStock}
               >
-                <Ionicons name="remove" size={24} color={inStock ? "#FFFFFF" : "#666"} />
+                <Ionicons name="remove" size={24} color={inStock ? "#4F2B50" : "#756A7B"} />
               </TouchableOpacity>
 
               <Text className="text-text-primary text-xl font-bold mx-6">{quantity}</Text>
 
               <TouchableOpacity
-                className="bg-primary rounded-full w-12 h-12 items-center justify-center"
+                className={`${!inStock || quantity >= product.stock ? "bg-background-lighter" : "bg-primary"} rounded-full w-12 h-12 items-center justify-center`}
                 onPress={() => setQuantity(Math.min(product.stock, quantity + 1))}
                 activeOpacity={0.7}
                 disabled={!inStock || quantity >= product.stock}
@@ -216,7 +225,7 @@ const ProductDetailScreen = () => {
                 <Ionicons
                   name="add"
                   size={24}
-                  color={!inStock || quantity >= product.stock ? "#666" : "#121212"}
+                  color={!inStock || quantity >= product.stock ? "#756A7B" : "#FFFFFF"}
                 />
               </TouchableOpacity>
             </View>
@@ -239,13 +248,13 @@ const ProductDetailScreen = () => {
           <View className="rounded-t-3xl bg-background px-6 pb-10 pt-6">
             <View className="mb-5 flex-row items-center justify-between">
               <Text className="text-text-primary text-2xl font-bold">Make an offer</Text>
-              <TouchableOpacity onPress={() => setOfferVisible(false)}><Ionicons name="close" size={26} color="#FFFFFF" /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setOfferVisible(false)}><Ionicons name="close" size={26} color="#4F2B50" /></TouchableOpacity>
             </View>
             <Text className="text-text-secondary">Current price: ${product.price.toFixed(2)} each</Text>
             <TextInput className="mt-4 rounded-xl bg-surface px-4 py-4 text-text-primary" placeholder="Your price per item" placeholderTextColor="#888" keyboardType="decimal-pad" value={offerPrice} onChangeText={setOfferPrice} />
-            <TextInput className="mt-3 rounded-xl bg-surface px-4 py-4 text-text-primary" placeholder="Message to seller (optional)" placeholderTextColor="#888" value={offerMessage} onChangeText={setOfferMessage} multiline />
+            <TextInput className="mt-3 rounded-xl bg-surface px-4 py-4 text-text-primary" placeholder="Message to seller (optional)" placeholderTextColor="#888" value={offerMessage} onChangeText={setOfferMessage} maxLength={500} multiline />
             <TouchableOpacity className="mt-5 rounded-xl bg-primary py-4" onPress={handleOffer} disabled={createOffer.isPending}>
-              {createOffer.isPending ? <ActivityIndicator color="#121212" /> : <Text className="text-center text-background font-bold">Send offer</Text>}
+              {createOffer.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text className="text-center text-background font-bold">Send offer</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -269,10 +278,10 @@ const ProductDetailScreen = () => {
             disabled={!inStock || isAddingToCart}
           >
             {isAddingToCart ? (
-              <ActivityIndicator size="small" color="#121212" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
-                <Ionicons name="cart" size={24} color={!inStock ? "#666" : "#121212"} />
+                <Ionicons name="cart" size={24} color={!inStock ? "#756A7B" : "#FFFFFF"} />
                 <Text
                   className={`font-bold text-lg ml-2 ${
                     !inStock ? "text-text-secondary" : "text-background"

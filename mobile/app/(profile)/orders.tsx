@@ -8,6 +8,7 @@ import { Order } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -15,6 +16,7 @@ function OrdersScreen() {
   const { isSignedIn } = useAuth();
   const { data: orders, isLoading, isError } = useOrders();
   const { createReviewAsync, isCreatingReview } = useReviews();
+  const queryClient = useQueryClient();
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [productRatings, setProductRatings] = useState<{ [key: string]: number }>({});
@@ -44,6 +46,11 @@ function OrdersScreen() {
             orderId: selectedOrder._id,
             rating: productRatings[item.product._id],
           })
+        )
+      );
+      queryClient.setQueriesData<Order[]>({ queryKey: ["orders"] }, (cachedOrders) =>
+        cachedOrders?.map((order) =>
+          order._id === selectedOrder._id ? { ...order, hasReviewed: true } : order
         )
       );
       Alert.alert("Success", "Thank you for rating all products!");

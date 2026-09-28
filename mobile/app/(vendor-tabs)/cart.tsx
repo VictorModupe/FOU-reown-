@@ -211,9 +211,9 @@ const CartScreen = () => {
                       disabled={isUpdating}
                     >
                       {isUpdating ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <ActivityIndicator size="small" color="#4F2B50" />
                       ) : (
-                        <Ionicons name="remove" size={18} color="#FFFFFF" />
+                        <Ionicons name="remove" size={18} color="#4F2B50" />
                       )}
                     </TouchableOpacity>
 
@@ -228,9 +228,9 @@ const CartScreen = () => {
                       disabled={isUpdating}
                     >
                       {isUpdating ? (
-                        <ActivityIndicator size="small" color="#8264A9" />
+                        <ActivityIndicator size="small" color="#FFFFFF" />
                       ) : (
-                        <Ionicons name="add" size={18} color="#8264A9" />
+                        <Ionicons name="add" size={18} color="#FFFFFF" />
                       )}
                     </TouchableOpacity>
 

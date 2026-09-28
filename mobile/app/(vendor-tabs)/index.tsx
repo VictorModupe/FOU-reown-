@@ -52,15 +52,20 @@ const ShopScreen = () => {
         <View className="px-6 pb-4 pt-6">
           <View className="flex-row items-center justify-between mb-6">
             <View>
-              <Text className="text-text-primary text-3xl font-bold tracking-tight">FOU</Text>
+              <Text className="text-text-primary text-4xl font-[4F2B50] font-kenao tracking-tight">FOU</Text>
               <Text className="text-text-secondary text-sm mt-1">Browse all products</Text>
               <Text className="mt-2 self-start rounded-full bg-primary/20 px-3 py-1 text-xs font-bold uppercase text-primary">
                 Vendor Dashboard
               </Text>
             </View>
 
-            <TouchableOpacity className="bg-surface/50 p-3 rounded-full" activeOpacity={0.7}>
-              <Ionicons name="options-outline" size={22} color={"#F0E5F1"} />
+            <TouchableOpacity
+              className="rounded-full bg-background-lighter p-3"
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Product filters"
+            >
+              <Ionicons name="options-outline" size={22} color="#4F2B50" />
             </TouchableOpacity>
           </View>
 
@@ -77,8 +82,8 @@ const ShopScreen = () => {
           </View>
         </View>
 
-        {/* CATEGORY FILTER */}
         <View className="mb-6">
+          <Text className="mb-3 px-5 text-lg font-bold text-text-primary">Categories</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -90,13 +95,15 @@ const ShopScreen = () => {
                 <TouchableOpacity
                   key={category.name}
                   onPress={() => setSelectedCategory(category.name)}
-                  className={`mr-3 rounded-2xl size-20 overflow-hidden items-center justify-center ${isSelected ? "bg-primary" : "bg-surface"}`}
+                  className="mr-3 w-[72px] items-center"
+                  activeOpacity={0.8}
                 >
-                  <Ionicons
-                    name={category.icon}
-                    size={36}
-                    color={isSelected ? "#4F2B50" : "#F0E5F1"}
-                  />
+                  <View className={`h-[60px] w-[60px] items-center justify-center rounded-2xl ${isSelected ? "bg-primary" : "bg-background-lighter"}`}>
+                    <Ionicons name={category.icon} size={27} color={isSelected ? "#FFFFFF" : "#4F2B50"} />
+                  </View>
+                  <Text className={`mt-2 text-center text-xs ${isSelected ? "font-bold text-primary" : "font-medium text-text-secondary"}`} numberOfLines={1}>
+                    {category.name}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -120,7 +127,7 @@ const ShopScreen = () => {
         accessibilityLabel="Add product"
         className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg"
       >
-        <Ionicons name="add" size={30} color="#8264A9" />
+        <Ionicons name="add" size={30} color="#FFFFFF" />
       </TouchableOpacity>
     </SafeScreen>
   );

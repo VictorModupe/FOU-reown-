@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api";
+import { Product } from "@/types";
 
 interface CreateReviewData {
   productId: string;
@@ -16,9 +17,15 @@ export const useReviews = () => {
       const response = await api.post("/reviews", data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    onSuccess: ({ product }: { product: Product }) => {
+      if (product) {
+        queryClient.setQueryData(["product", product._id], product);
+        queryClient.setQueriesData<Product[]>({ queryKey: ["products"] }, (products) =>
+          products?.map((cachedProduct) =>
+            cachedProduct._id === product._id ? { ...cachedProduct, ...product } : cachedProduct
+          )
+        );
+      }
     },
   });
 

@@ -11,9 +11,9 @@ module.exports = {
       },
       colors: {
         primary: {
-          DEFAULT: "#F0E5F1", // spotify green
+          DEFAULT: "#4F2B50",
           light: "#8264A9",
-          dark: "#4F2B50",
+          dark: "#351C36",
         },
         background: {
           DEFAULT: "rgb(var(--color-background) / <alpha-value>)",
