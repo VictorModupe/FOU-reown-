@@ -15,5 +15,6 @@ export default function useCurrentUser() {
       return data.user;
     },
     enabled: isLoaded && isSignedIn,
+    retry: 1,
   });
 }
