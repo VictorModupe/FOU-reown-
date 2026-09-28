@@ -6,7 +6,7 @@ import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Providers from "@/config/providers";
@@ -28,7 +28,6 @@ export default function RootLayout() {
       taskUrls={{
         "choose-organization": "/(routes)/login",
         "reset-password": "/(routes)/login",
-        "setup-mfa": "/(routes)/login",
       }}>
       <ThemeProvider>
         <ThemeRoot />
@@ -74,27 +73,9 @@ const styles = StyleSheet.create({
 
 function ThemeRoot() {
   const { themeVariables } = useTheme();
-  const { isLoaded, isSignedIn, signOut } = useAuth();
-  const [sessionResetReady, setSessionResetReady] = useState(false);
-  const sessionResetStarted = useRef(false);
+  const { isLoaded } = useAuth();
 
-  useEffect(() => {
-    if (!isLoaded || sessionResetStarted.current) return;
-    sessionResetStarted.current = true;
-
-    const resetSession = async () => {
-      try {
-        if (isSignedIn) await signOut();
-        setSessionResetReady(true);
-      } catch (error) {
-        console.error("Unable to clear the auth session on startup", error);
-      }
-    };
-
-    void resetSession();
-  }, [isLoaded, isSignedIn, signOut]);
-
-  if (!isLoaded || !sessionResetReady) return null;
+  if (!isLoaded) return null;
 
   return (
     <View className="flex-1" style={themeVariables}>
@@ -102,13 +83,9 @@ function ThemeRoot() {
         <Providers>
           <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="onboarding/index" />
-            {/* <Stack.Screen name="(customer-tabs)" />
-            <Stack.Screen name="(vendor-tabs)" /> */}
           </Stack>
         </Providers>
       </GestureHandlerRootView>
-
-
     </View>
   );
 }
