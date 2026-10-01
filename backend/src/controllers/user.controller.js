@@ -1,14 +1,47 @@
 import { User } from "../models/user.model.js";
 import { ENV } from "../config/env.js";
+import { ensureFouOrganizationMembership, getFouOrganizationAppRole } from "../lib/vendor-membership.js";
 
 export async function getCurrentUser(req, res) {
   try {
+    const organizationRole = ENV.CLERK_VENDOR_ORGANIZATION_ID
+      ? await getFouOrganizationAppRole(req.user.clerkId)
+      : null;
+    const isVendor = organizationRole === "vendor";
+    const role = req.user.email === ENV.ADMIN_EMAIL ? "admin" : isVendor ? "vendor" : "customer";
+    if (req.user.role !== role) {
+      req.user.role = role;
+      await req.user.save();
+    }
     const user = req.user.toObject();
-    if (user.email === ENV.ADMIN_EMAIL) user.role = "admin";
     res.status(200).json({ user });
   } catch (error) {
     console.error("Error fetching current user:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function completeSignup(req, res) {
+  const requestedRole = req.body?.role;
+  if (!["customer", "vendor"].includes(requestedRole)) {
+    return res.status(400).json({ error: "Choose a valid account type" });
+  }
+
+  try {
+    await ensureFouOrganizationMembership(req.user.clerkId, requestedRole);
+    const role = requestedRole;
+
+    req.user.role = role;
+    await req.user.save();
+    return res.status(200).json({ role });
+  } catch (error) {
+    console.error("Error completing signup:", error.message);
+    const missingOrganization = error.message === "CLERK_VENDOR_ORGANIZATION_ID is not configured";
+    return res.status(missingOrganization ? 503 : 502).json({
+      error: missingOrganization
+        ? "Seller signup is temporarily unavailable. Configure the Fou Org organization ID on the server."
+        : "Could not verify your Fou Org membership. Please try again.",
+    });
   }
 }
 

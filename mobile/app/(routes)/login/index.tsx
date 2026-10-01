@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Controller, useForm } from "react-hook-form";
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth, useSignIn } from '@clerk/clerk-expo';
 import { toast } from 'sonner-native';
 import useSocialAuth from "@/hooks/useSocialAuth";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useApi } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LoginFormData {
     email: string;
@@ -16,10 +18,14 @@ interface LoginFormData {
 export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+    const { role: requestedRole } = useLocalSearchParams<{ role?: string }>();
     const { isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
     const { isLoaded, signIn, setActive } = useSignIn();
     const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
     const { loadingStrategy, handleSocialAuth } = useSocialAuth();
+    const api = useApi();
+    const queryClient = useQueryClient();
+    const accountType = requestedRole === "vendor" ? "vendor" : requestedRole === "customer" ? "customer" : undefined;
 
     const loginForm = useForm<LoginFormData>({
         mode: "onChange",
@@ -32,9 +38,9 @@ export default function LoginScreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        if (!authLoaded || !isSignedIn || isUserLoading || !currentUser) return;
+        if (!authLoaded || !isSignedIn || isUserLoading || !currentUser || accountType) return;
         router.replace(currentUser.role === "vendor" ? "/(vendor-tabs)" : "/(customer-tabs)");
-    }, [authLoaded, currentUser, isSignedIn, isUserLoading, router]);
+    }, [accountType, authLoaded, currentUser, isSignedIn, isUserLoading, router]);
 
     if (!authLoaded || (isSignedIn && isUserLoading)) return null;
 
@@ -51,6 +57,13 @@ export default function LoginScreen() {
                 throw new Error(verificationMessage);
             }
             await setActive({ session: result.createdSessionId });
+            if (accountType) {
+                const { data } = await api.post("/users/signup-role", { role: accountType });
+                await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+                router.replace(data.role === "vendor" ? "/(vendor-tabs)" : "/(customer-tabs)");
+                toast.success("Account ready");
+                return;
+            }
             toast.success("Login successful");
         } catch (error: any) {
             const clerkError = error?.errors?.[0];
@@ -65,7 +78,7 @@ export default function LoginScreen() {
         }
     };
     const handleSignUpNavigation = () => {
-        router.push("/(routes)/signup");
+        router.push({ pathname: "/(routes)/signup", params: { role: accountType || "customer" } });
     }
     return (
         <ImageBackground
@@ -246,7 +259,7 @@ export default function LoginScreen() {
                                 {/* Google Login Button */}
                                 <TouchableOpacity
                                     className="w-full flex-row items-center justify-center bg-purple-300 rounded-xl py-3 px-4"
-                                    onPress={() => handleSocialAuth("oauth_google")}
+                                    onPress={() => handleSocialAuth("oauth_google", accountType)}
                                     disabled={isSubmitting || loadingStrategy !== null}
                                 >
                                     <Ionicons name="logo-google" size={20} color="#4F2B50" />
@@ -258,7 +271,7 @@ export default function LoginScreen() {
                                 {/* Apple Login Button */}
                                 <TouchableOpacity
                                     className="w-full flex-row items-center justify-center bg-black rounded-xl py-3 px-4"
-                                    onPress={() => handleSocialAuth("oauth_apple")}
+                                    onPress={() => handleSocialAuth("oauth_apple", accountType)}
                                     disabled={isSubmitting || loadingStrategy !== null}
                                 >
                                     <Ionicons name="logo-apple" size={20} color="#FFFFFF" />

@@ -1,13 +1,17 @@
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, ImageBackground, Keyboard, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
+import { useLocalSearchParams } from 'expo-router';
 import { router } from 'expo-router';
+import { useApi } from '@/lib/api';
 import { toast } from 'sonner-native';
 
 export default function SignupOtpScreen() {
 	const [code, setCode] = useState<string[]>(Array(6).fill(''));
 	const inputs = useRef<(TextInput | null)[]>([]);
 	const { isLoaded, signUp, setActive } = useSignUp();
+	const { role: requestedRole } = useLocalSearchParams<{ role?: string }>();
+	const api = useApi();
 	const [isVerifying, setIsVerifying] = useState(false);
 
 	const updateCode = (value: string, index: number) => {
@@ -36,10 +40,12 @@ export default function SignupOtpScreen() {
 			const result = await signUp.attemptEmailAddressVerification({ code: code.join('') });
 			if (result.status !== 'complete' || !result.createdSessionId) throw new Error('Verification is incomplete.');
 			await setActive({ session: result.createdSessionId });
-			toast.success('Vendor account created');
-			router.replace('/(vendor-tabs)');
+			const role = requestedRole === 'customer' ? 'customer' : 'vendor';
+			const { data } = await api.post('/users/signup-role', { role });
+			toast.success(role === 'vendor' ? 'Seller account created' : 'Customer account created');
+			router.replace(data.role === 'vendor' ? '/(vendor-tabs)' : '/(customer-tabs)');
 		} catch (error: any) {
-			toast.error(error?.errors?.[0]?.longMessage || error?.message || 'Invalid verification code');
+			toast.error(error?.response?.data?.error || error?.errors?.[0]?.longMessage || error?.message || 'Could not finish account setup');
 		} finally {
 			setIsVerifying(false);
 		}

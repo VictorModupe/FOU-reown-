@@ -75,7 +75,7 @@ export default function ForgetPasswordScreen() {
       }
       await setActive({ session: result.createdSessionId });
       toast.success("Password updated");
-      router.replace("/(vendor-tabs)");
+      router.replace("/");
     } catch (error: any) {
       toast.error(error?.errors?.[0]?.longMessage || error?.message || "Unable to reset password");
     } finally {

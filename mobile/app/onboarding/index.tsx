@@ -4,7 +4,8 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function OnboardingScreen() {
-    const handleContinueAsVendor = () => router.replace("/(routes)/login");
+    const handleContinueAsVendor = () => router.replace({ pathname: "/(routes)/signup", params: { role: "vendor" } });
+    const handleContinueAsCustomer = () => router.replace({ pathname: "/(routes)/signup", params: { role: "customer" } });
     const handleContinueAsGuest = () => router.replace("/(customer-tabs)");
 
     return (
@@ -36,13 +37,13 @@ export default function OnboardingScreen() {
                         end={{ x: 1, y: 1 }}
                         style={styles.buttonGradient}
                     >
-                        <Text style={styles.buttonText}>Continue to Vendor Login</Text>
+                        <Text style={styles.buttonText}>Continue as a Seller</Text>
                     </LinearGradient>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={handleContinueAsGuest}
+                    onPress={handleContinueAsCustomer}
                     accessibilityRole="button"
                 >
                     <LinearGradient
@@ -55,6 +56,9 @@ export default function OnboardingScreen() {
                             Continue as a Customer
                         </Text>
                     </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleContinueAsGuest} accessibilityRole="button" style={styles.guestLink}>
+                    <Text style={styles.guestLinkText}>Browse as a guest</Text>
                 </TouchableOpacity>
             </View>
         </ImageBackground>
@@ -109,5 +113,14 @@ const styles = StyleSheet.create({
     buttonTextDark: {
         color: "#4F2B50",
         fontFamily: "Kenao",
+    },
+    guestLink: {
+        paddingVertical: 16,
+    },
+    guestLinkText: {
+        color: "#F0E5F1",
+        fontSize: 15,
+        fontFamily: "Kenao",
+        textDecorationLine: "underline",
     },
 });

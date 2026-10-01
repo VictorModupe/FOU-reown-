@@ -5,6 +5,8 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import Toast from "react-native-toast-message";
+import { useApi } from "@/lib/api";
+import { router } from "expo-router";
 
 // Lets the auth browser session close itself when the app is reopened from the redirect.
 WebBrowser.maybeCompleteAuthSession();
@@ -16,6 +18,7 @@ export default function useSocialAuth() {
   const [loadingStrategy, setLoadingStrategy] = useState<SocialStrategy | null>(null);
   const { startSSOFlow } = useSSO();
   const { isSignedIn, signOut } = useAuth();
+  const api = useApi();
 
   // Faster browser start on Android.
   useEffect(() => {
@@ -37,13 +40,18 @@ export default function useSocialAuth() {
           strategy,
           // Needs a `scheme` in app.json; resolves to <scheme>://oauth-native-callback
           redirectUrl: AuthSession.makeRedirectUri({ path: "oauth-native-callback" }),
-          // Only passed on sign-UP. It is a request; your backend decides the real role.
-          ...(role ? { unsafeMetadata: { role } } : {}),
         });
 
         if (createdSessionId && setActive) {
-          // (auth)/_layout sees the signed-in state and redirects to the right dashboard.
           await setActive({ session: createdSessionId });
+          if (role) {
+            const { data } = await api.post("/users/signup-role", { role });
+            Toast.show({
+              type: "success",
+              text1: role === "vendor" ? "Seller account ready" : "Customer account ready",
+            });
+            router.replace(data.role === "vendor" ? "/(vendor-tabs)" : "/(customer-tabs)");
+          }
         }
         if (!createdSessionId) {
           Toast.show({
@@ -66,7 +74,7 @@ export default function useSocialAuth() {
         setLoadingStrategy(null);
       }
     },
-    [isSignedIn, loadingStrategy, signOut, startSSOFlow]
+    [api, isSignedIn, loadingStrategy, signOut, startSSOFlow]
   );
 
   return { loadingStrategy, handleSocialAuth };

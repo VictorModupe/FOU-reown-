@@ -44,6 +44,7 @@ CLIENT_URL=http://localhost:5173
 
 CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
+CLERK_VENDOR_ORGANIZATION_ID=org_your_fou_org_id
 
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key

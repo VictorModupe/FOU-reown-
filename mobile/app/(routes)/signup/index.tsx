@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Controller, useForm } from 'react-hook-form';
 import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSignUp } from '@clerk/clerk-expo';
 import { toast } from 'sonner-native';
 import useSocialAuth from "@/hooks/useSocialAuth";
@@ -28,6 +29,8 @@ export default function SignUpScreen() {
     // All hooks must be called inside the component
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+    const { role: requestedRole } = useLocalSearchParams<{ role?: string }>();
+    const accountType = requestedRole === "customer" ? "customer" : "vendor";
     const { isLoaded, signUp } = useSignUp();
     const { loadingStrategy, handleSocialAuth } = useSocialAuth();
 
@@ -42,7 +45,7 @@ export default function SignUpScreen() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const handleSignInNavigation = () => {
-        router.push('/(routes)/login');
+        router.push({ pathname: '/(routes)/login', params: { role: accountType } });
     };
 
     const onSignUpSubmit = async ({ name, email, password }: SignUpFormData) => {
@@ -53,10 +56,9 @@ export default function SignUpScreen() {
                 emailAddress: email,
                 password,
                 firstName: name,
-                unsafeMetadata: { role: "vendor" },
             });
             await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-            router.replace("/(routes)/signup-otp");
+            router.replace({ pathname: "/(routes)/signup-otp", params: { role: accountType } });
         } catch (error: any) {
             toast.error(error?.errors?.[0]?.longMessage || error?.message || "Unable to create account");
         } finally {
@@ -97,7 +99,7 @@ export default function SignUpScreen() {
                             Create your account
                         </Text>
                         <Text className="text-white/75 text-base font-kenao">
-                            Sign up to get started
+                            {accountType === "vendor" ? "Create your seller account" : "Create your customer account"}
                         </Text>
                     </View>
 
@@ -269,7 +271,7 @@ export default function SignUpScreen() {
                     <View className="gap-3 mb-8">
                         <TouchableOpacity
                             className="w-full flex-row items-center justify-center bg-white rounded-xl py-3 px-4"
-                            onPress={() => handleSocialAuth("oauth_google", "vendor")}
+                            onPress={() => handleSocialAuth("oauth_google", accountType)}
                             disabled={isSubmitting || loadingStrategy !== null}
                         >
                             <Ionicons name="logo-google" size={20} color="#8264A9" />
@@ -280,7 +282,7 @@ export default function SignUpScreen() {
 
                         <TouchableOpacity
                             className="w-full flex-row items-center justify-center bg-black rounded-xl py-3 px-4"
-                            onPress={() => handleSocialAuth("oauth_apple", "vendor")}
+                            onPress={() => handleSocialAuth("oauth_apple", accountType)}
                             disabled={isSubmitting || loadingStrategy !== null}
                         >
                             <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
