@@ -61,6 +61,16 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     addresses: [addressSchema],
+    flutterwavePayout: {
+      subaccountId: { type: String, select: false },
+      country: String,
+      bankCode: String,
+      bankName: String,
+      accountName: String,
+      accountLast4: String,
+      businessMobile: String,
+      connectedAt: Date,
+    },
     wishlist: [
       {
         type: mongoose.Schema.Types.ObjectId,

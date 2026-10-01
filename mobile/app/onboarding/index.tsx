@@ -20,7 +20,7 @@ export default function OnboardingScreen() {
             />
 
             <View style={styles.contentContainer}>
-                <Text style={styles.title}>Welcome to FOU</Text>
+                <Text style={styles.title}>Declutter, Earn, Reown</Text>
                 <Text style={styles.subtitle}>
                     Discover many amazing thrift Products and Shop with us
                 </Text>
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 32,
-        fontWeight: "bold",
+        // fontWeight: "bold",
         color: "#F0E5F1",
         marginBottom: 10,
         textAlign: "center",
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: "#F0E5F1",
         fontSize: 18,
-        fontWeight: "bold",
+        // fontWeight: "bold",
         fontFamily: "Kenao",
     },
     buttonTextDark: {

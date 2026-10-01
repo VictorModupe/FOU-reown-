@@ -12,6 +12,29 @@ export async function getCurrentUser(req, res) {
   }
 }
 
+export async function updateCurrentUserProfile(req, res) {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const imageUrl = String(req.body?.imageUrl || "").trim();
+
+    if (name.length < 2 || name.length > 80) {
+      return res.status(400).json({ error: "Name must be between 2 and 80 characters" });
+    }
+    if (imageUrl.length > 2048 || !imageUrl.startsWith("https://")) {
+      return res.status(400).json({ error: "A valid HTTPS profile image URL is required" });
+    }
+
+    req.user.name = name;
+    req.user.imageUrl = imageUrl;
+    await req.user.save();
+
+    res.status(200).json({ message: "Profile updated successfully", user: req.user });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Could not update profile" });
+  }
+}
+
 export async function addAddress(req, res) {
   try {
     const { label, fullName, streetAddress, city, state, zipCode, phoneNumber, isDefault } =

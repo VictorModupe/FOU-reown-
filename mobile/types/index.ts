@@ -150,6 +150,7 @@ export interface Order {
 export interface OrderItem {
   _id: string;
   product: Product;
+  vendor?: string;
   name: string;
   price: number;
   quantity: number;

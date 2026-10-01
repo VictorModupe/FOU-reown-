@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const themeVariables = vars(
     theme === "dark"
       ? {
-          "--color-background": "18 18 18",
+          "--color-background": "15 12 27",
           "--color-background-light": "24 24 24",
           "--color-background-lighter": "40 40 40",
           "--color-surface": "40 40 40",

@@ -24,7 +24,18 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: false,
+  },
 });
+
+const vendorPayoutSchema = new mongoose.Schema({
+  vendor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  subaccountId: { type: String, required: true },
+  amount: { type: Number, required: true, min: 0 },
+}, { _id: false });
 
 const shippingAddressSchema = new mongoose.Schema({
   email: {
@@ -79,6 +90,7 @@ const orderSchema = new mongoose.Schema(
       sparse: true,
     },
     orderItems: [orderItemSchema],
+    vendorPayouts: { type: [vendorPayoutSchema], default: [] },
     shippingAddress: {
       type: shippingAddressSchema,
       required: true,

@@ -20,8 +20,8 @@ export default function SearchScreen() {
     <SafeScreen>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View className="px-6 pb-5 pt-6">
-          <Text className="text-3xl font-bold tracking-tight text-text-primary">Search</Text>
-          <Text className="mt-1 text-text-secondary">Find products across the catalog</Text>
+          <Text className="text-3xl font-kenao tracking-tight text-text-primary">Search</Text>
+          <Text className="mt-1 text-text-secondary font-kenao">Find products across the catalog</Text>
           <View className="mt-5 flex-row items-center rounded-2xl bg-surface px-4 py-3">
             <Ionicons name="search" size={22} color="#8d8290" />
             <TextInput

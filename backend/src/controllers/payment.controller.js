@@ -6,6 +6,7 @@ import { Product } from "../models/product.model.js";
 import { Order } from "../models/order.model.js";
 import { CheckoutSession } from "../models/checkout-session.model.js";
 import { getGuestSessionId } from "../lib/guest-session.js";
+import { buildFlutterwaveSubaccounts } from "../lib/flutterwave-splits.js";
 
 const getPaymentOwner = (req) => {
   if (req.user?.clerkId) {
@@ -180,6 +181,7 @@ const completePaidCheckout = async (checkout, owner, transactionId) => {
       guestSessionId: owner.guestSessionId,
       checkoutSession: checkout._id,
       orderItems: checkout.orderItems,
+      vendorPayouts: checkout.vendorPayouts,
       shippingAddress: checkout.shippingAddress,
       paymentResult: { id: transactionId, status: "succeeded" },
       totalPrice: checkout.totalPrice,
@@ -248,11 +250,15 @@ export async function createFlutterwavePayment(req, res) {
       return res.status(400).json({ error: "Enter a valid email and complete shipping address" });
     }
 
-    const cart = await Cart.findOne(owner.cartFilter).populate("items.product");
+    const cart = await Cart.findOne(owner.cartFilter).populate({
+      path: "items.product",
+      populate: { path: "vendor", select: "name email +flutterwavePayout.subaccountId" },
+    });
     if (!cart?.items?.length) return res.status(400).json({ error: "Cart is empty" });
 
     let subtotal = 0;
     const orderItems = [];
+    const vendorSales = new Map();
     for (const item of cart.items) {
       const product = item.product;
       if (!product) return res.status(404).json({ error: "A product in your cart no longer exists" });
@@ -264,6 +270,7 @@ export async function createFlutterwavePayment(req, res) {
         return res.status(400).json({ error: `Product ${product.name} cannot be purchased right now` });
       }
       subtotal += product.price * item.quantity;
+      const vendor = product.vendor;
       orderItems.push({
         cartItemId: item._id,
         product: product._id,
@@ -271,10 +278,38 @@ export async function createFlutterwavePayment(req, res) {
         price: product.price,
         quantity: item.quantity,
         image: product.images[0],
+        vendor: vendor?._id,
       });
+      if (vendor) {
+        const entry = vendorSales.get(vendor._id.toString()) || {
+          vendor: vendor._id,
+          subaccountId: vendor.flutterwavePayout?.subaccountId,
+          salesAmount: 0,
+        };
+        entry.salesAmount += product.price * item.quantity;
+        vendorSales.set(vendor._id.toString(), entry);
+      }
     }
 
     const total = Math.round((subtotal + 10 + subtotal * 0.08) * 100) / 100;
+    const vendors = [...vendorSales.values()];
+    const unlinkedVendor = vendors.find((vendor) => vendor.salesAmount > 0 && !vendor.subaccountId);
+    if (unlinkedVendor) {
+      return res.status(409).json({
+        error: "A seller in your cart has not connected a Flutterwave payout bank account yet. Remove their item or try again later.",
+      });
+    }
+    const vendorPayouts = vendors.filter(({ salesAmount }) => salesAmount > 0).map(({ vendor, subaccountId, salesAmount }) => ({
+      vendor,
+      subaccountId,
+      amount: Math.round(salesAmount * 100) / 100,
+    }));
+    const subaccounts = vendorPayouts.length
+      ? buildFlutterwaveSubaccounts(vendorPayouts.map((payout) => ({
+          subaccountId: payout.subaccountId,
+          salesAmount: payout.amount,
+        })), total)
+      : undefined;
     const txRef = `reown-${randomUUID()}`;
     const checkout = await CheckoutSession.create({
       user: owner.user?._id,
@@ -282,6 +317,7 @@ export async function createFlutterwavePayment(req, res) {
       guestSessionId: owner.guestSessionId,
       txRef,
       orderItems,
+      vendorPayouts,
       shippingAddress,
       totalPrice: total,
     });
@@ -293,6 +329,7 @@ export async function createFlutterwavePayment(req, res) {
         amount: Number(total.toFixed(2)),
         currency: "USD",
         payment_options: "card,banktransfer,ussd",
+        ...(subaccounts ? { subaccounts } : {}),
         customer: {
           email: shippingAddress.email,
           name: shippingAddress.fullName,

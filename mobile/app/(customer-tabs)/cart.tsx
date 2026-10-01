@@ -162,7 +162,7 @@ const CartScreen = () => {
 
   return (
     <SafeScreen>
-      <Text className="px-6 pb-5 text-text-primary text-3xl font-bold tracking-tight">Cart</Text>
+      <Text className="px-6 pb-5 text-text-primary text-3xl font-kenao tracking-tight">Cart</Text>
 
       <ScrollView
         className="flex-1"
@@ -189,7 +189,7 @@ const CartScreen = () => {
                 <View className="flex-1 ml-4 justify-between">
                   <View>
                     <Text
-                      className="text-text-primary font-bold text-lg leading-tight"
+                      className="text-text-primary font-kenao text-lg leading-tight"
                       numberOfLines={2}
                     >
                       {item.product.name}
