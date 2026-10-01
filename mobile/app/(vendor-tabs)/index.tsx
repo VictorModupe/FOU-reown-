@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { router } from "expo-router";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const CATEGORIES = [
   { name: "All", icon: "grid-outline" as const },
@@ -18,6 +19,8 @@ const CATEGORIES = [
 const ShopScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const { isDark } = useTheme();
+  const vendorAccent = isDark ? "#75D7BE" : "#087F68";
 
   const { data: products, isLoading, isError, error } = useProducts();
 
@@ -54,9 +57,9 @@ const ShopScreen = () => {
             <View>
               <Text className="text-text-primary text-4xl font-[4F2B50] font-kenao tracking-tight">FOU</Text>
               <Text className="text-text-secondary text-sm mt-1">Browse all products</Text>
-              <Text className="mt-2 self-start rounded-full bg-primary/20 px-3 py-1 text-xs font-bold uppercase text-primary">
-                Vendor Dashboard
-              </Text>
+              <View className="mt-2 self-start rounded-full px-3 py-1" style={{ backgroundColor: isDark ? "rgba(117,215,190,0.16)" : "#DDF4EC" }}>
+                <Text className="text-xs font-bold uppercase" style={{ color: vendorAccent }}>Seller workspace</Text>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -65,13 +68,13 @@ const ShopScreen = () => {
               accessibilityRole="button"
               accessibilityLabel="Product filters"
             >
-              <Ionicons name="options-outline" size={22} color="#4F2B50" />
+              <Ionicons name="options-outline" size={22} color={vendorAccent} />
             </TouchableOpacity>
           </View>
 
           {/* SEARCH BAR */}
           <View className="bg-surface flex-row items-center px-5 py-4 rounded-2xl">
-            <Ionicons color={"#666"} size={22} name="search" />
+            <Ionicons color={vendorAccent} size={22} name="search" />
             <TextInput
               placeholder="Search for products"
               placeholderTextColor={"#666"}
@@ -98,10 +101,13 @@ const ShopScreen = () => {
                   className="mr-3 w-[72px] items-center"
                   activeOpacity={0.8}
                 >
-                  <View className={`h-[60px] w-[60px] items-center justify-center rounded-2xl ${isSelected ? "bg-primary" : "bg-background-lighter"}`}>
-                    <Ionicons name={category.icon} size={27} color={isSelected ? "#FFFFFF" : "#4F2B50"} />
+                  <View
+                    className={`h-[60px] w-[60px] items-center justify-center rounded-2xl ${isSelected ? "" : "bg-background-lighter"}`}
+                    style={isSelected ? { backgroundColor: vendorAccent } : undefined}
+                  >
+                    <Ionicons name={category.icon} size={27} color={isSelected ? "#FFFFFF" : vendorAccent} />
                   </View>
-                  <Text className={`mt-2 text-center text-xs ${isSelected ? "font-bold text-primary" : "font-medium text-text-secondary"}`} numberOfLines={1}>
+                  <Text className={`mt-2 text-center text-xs ${isSelected ? "font-bold" : "font-medium text-text-secondary"}`} style={isSelected ? { color: vendorAccent } : undefined} numberOfLines={1}>
                     {category.name}
                   </Text>
                 </TouchableOpacity>
@@ -125,7 +131,8 @@ const ShopScreen = () => {
         activeOpacity={0.85}
         accessibilityRole="button"
         accessibilityLabel="Add product"
-        className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg"
+        className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full shadow-lg"
+        style={{ backgroundColor: vendorAccent }}
       >
         <Ionicons name="add" size={30} color="#FFFFFF" />
       </TouchableOpacity>

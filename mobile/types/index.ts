@@ -21,7 +21,7 @@ export interface User {
   email: string;
   name: string;
   imageUrl: string;
-  role: "customer" | "vendor";
+  role: "customer" | "vendor" | "admin";
   addresses: Address[];
   wishlist: string[];
   createdAt: string;

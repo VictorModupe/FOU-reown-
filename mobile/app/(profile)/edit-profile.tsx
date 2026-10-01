@@ -39,6 +39,13 @@ export default function EditProfileScreen() {
     || user?.emailAddresses[0]?.emailAddress
     || account?.email
     || "Email unavailable";
+  const accountRole = account?.role === "vendor"
+    ? "Seller"
+    : account?.role === "customer"
+      ? "Customer"
+      : account?.role === "admin"
+        ? "Admin"
+        : "Not assigned";
   const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
   const saveProfile = async () => {
@@ -125,6 +132,15 @@ export default function EditProfileScreen() {
               onSubmitEditing={() => void saveProfile()}
               className="mb-5 rounded-xl border border-surface-light bg-surface px-4 py-4 text-base text-text-primary"
               accessibilityLabel="Last name"
+            />
+
+            <Text className="mb-2 text-sm font-semibold text-text-primary">Account type</Text>
+            <TextInput
+              value={accountRole}
+              editable={false}
+              selectTextOnFocus
+              className="mb-5 rounded-xl border border-surface-light bg-background-light px-4 py-4 text-base font-semibold text-text-secondary"
+              accessibilityLabel={`Account type: ${accountRole}`}
             />
 
             <Text className="mb-2 text-sm font-semibold text-text-primary">Email address</Text>

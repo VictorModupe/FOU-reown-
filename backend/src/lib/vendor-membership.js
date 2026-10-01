@@ -40,11 +40,15 @@ export async function ensureFouOrganizationMembership(clerkUserId, appRole) {
     }
   }
 
-  await clerkClient.organizations.updateOrganizationMembershipMetadata({
+  const updatedMembership = await clerkClient.organizations.updateOrganizationMembershipMetadata({
     organizationId,
     userId: clerkUserId,
     publicMetadata: { ...membership.publicMetadata, appRole },
   });
+
+  if (updatedMembership.publicMetadata?.appRole !== appRole) {
+    throw new Error("Fou Org did not persist the selected account role");
+  }
 }
 
 export async function hasVendorOrganizationMembership(clerkUserId) {

@@ -8,17 +8,18 @@ import { useTheme } from "@/contexts/ThemeContext";
 const TabsLayout = () => {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const vendorAccent = isDark ? "#75D7BE" : "#087F68";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: isDark ? "#D6BEDF" : "#4F2B50",
-        tabBarInactiveTintColor: isDark ? "#B9ADB9" : "#796D7F",
+        tabBarActiveTintColor: vendorAccent,
+        tabBarInactiveTintColor: isDark ? "#A9BDB8" : "#687B75",
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isDark ? "rgba(35, 28, 38, 0.94)" : "rgba(251, 248, 253, 0.94)",
+          backgroundColor: isDark ? "rgba(22, 39, 35, 0.96)" : "rgba(239, 248, 244, 0.96)",
           borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: isDark ? "#514558" : "#DED4E4",
+          borderTopColor: isDark ? "#3C5A50" : "#C7DED5",
           height: 64 + insets.bottom,
           paddingTop: 6,
           marginHorizontal: 12,

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   ActivityIndicator,
   Modal,
@@ -38,6 +39,9 @@ const formatAmount = (amount: number) =>
 
 export default function EarningsScreen() {
   const api = useApi();
+  const { isDark } = useTheme();
+  const vendorAccent = isDark ? "#75D7BE" : "#087F68";
+  const vendorAccentDisabled = isDark ? "#326D5E" : "#7FB9AA";
   const { isLoaded, isSignedIn, userId } = useAuth();
   const queryClient = useQueryClient();
   const [country, setCountry] = useState("");
@@ -98,7 +102,7 @@ export default function EarningsScreen() {
           <Text className="mt-1 text-text-secondary">Flutterwave sales and settlement destination</Text>
         </View>
 
-        <View className="mx-6 mb-5 rounded-2xl bg-primary p-5">
+        <View className="mx-6 mb-5 rounded-2xl p-5" style={{ backgroundColor: isDark ? "#164B40" : "#087F68" }}>
           <Text className="text-sm font-semibold text-white/80">Sales routed to your account</Text>
           {earningsQuery.isLoading ? (
             <ActivityIndicator className="mt-4 self-start" color="#FFFFFF" />
@@ -123,11 +127,11 @@ export default function EarningsScreen() {
           </View>
 
           {accountQuery.isLoading ? (
-            <ActivityIndicator className="self-start" color="#4F2B50" />
+            <ActivityIndicator className="self-start" color={vendorAccent} />
           ) : payoutAccount && !editingAccount ? (
             <View className="flex-row items-center rounded-xl bg-surface p-4">
-              <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-primary/15">
-                <Ionicons name="business-outline" size={22} color="#4F2B50" />
+              <View className="mr-3 h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(117,215,190,0.16)" : "#DDF4EC" }}>
+                <Ionicons name="business-outline" size={22} color={vendorAccent} />
               </View>
               <View className="flex-1">
                 <Text className="font-bold text-text-primary">{payoutAccount.bankName}</Text>
@@ -168,7 +172,7 @@ export default function EarningsScreen() {
                 <Text className={bankCode ? "text-text-primary" : "text-text-tertiary"}>
                   {banksQuery.isLoading ? "Loading banks..." : banksQuery.data?.find((bank) => bank.code === bankCode)?.name || "Choose a bank"}
                 </Text>
-                {banksQuery.isLoading ? <ActivityIndicator color="#4F2B50" /> : <Ionicons name="chevron-down" size={18} color="#796D7F" />}
+                {banksQuery.isLoading ? <ActivityIndicator color={vendorAccent} /> : <Ionicons name="chevron-down" size={18} color="#796D7F" />}
               </TouchableOpacity>
               {banksQuery.isError && <Text className="mb-3 text-sm text-red-500">Could not load banks for this country.</Text>}
 
@@ -198,7 +202,8 @@ export default function EarningsScreen() {
               <TouchableOpacity
                 onPress={() => saveAccount.mutate()}
                 disabled={!canSave || saveAccount.isPending}
-                className={`min-h-12 flex-row items-center justify-center rounded-xl px-4 ${canSave && !saveAccount.isPending ? "bg-primary" : "bg-primary/40"}`}
+                className="min-h-12 flex-row items-center justify-center rounded-xl px-4"
+                style={{ backgroundColor: canSave && !saveAccount.isPending ? vendorAccent : vendorAccentDisabled }}
                 accessibilityRole="button"
               >
                 {saveAccount.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text className="font-bold text-white">Connect with Flutterwave</Text>}
@@ -215,7 +220,7 @@ export default function EarningsScreen() {
         <View className="mx-6 border-t border-surface-light pt-5">
           <Text className="mb-3 text-lg font-bold text-text-primary">Recent sales</Text>
           {earningsQuery.isLoading ? (
-            <ActivityIndicator className="self-start" color="#4F2B50" />
+            <ActivityIndicator className="self-start" color={vendorAccent} />
           ) : earningsQuery.isError ? (
             <Text className="text-sm text-red-500">Could not load sales. Pull to refresh and try again.</Text>
           ) : payouts.length === 0 ? (
@@ -226,8 +231,8 @@ export default function EarningsScreen() {
             </View>
           ) : payouts.map((payout) => (
             <View key={`${payout.orderId}-${payout.transactionId}`} className="mb-2 flex-row items-center rounded-xl bg-surface p-4">
-              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-primary/15">
-                <Ionicons name="arrow-down-outline" size={20} color="#4F2B50" />
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(117,215,190,0.16)" : "#DDF4EC" }}>
+                <Ionicons name="arrow-down-outline" size={20} color={vendorAccent} />
               </View>
               <View className="flex-1">
                 <Text className="font-semibold text-text-primary">Order #{payout.orderId.slice(-8).toUpperCase()}</Text>
@@ -248,7 +253,7 @@ export default function EarningsScreen() {
                 <Ionicons name="close" size={24} color="#796D7F" />
               </TouchableOpacity>
             </View>
-            {banksQuery.isLoading ? <ActivityIndicator color="#4F2B50" /> : (
+            {banksQuery.isLoading ? <ActivityIndicator color={vendorAccent} /> : (
               <ScrollView keyboardShouldPersistTaps="handled">
                 {(banksQuery.data ?? []).map((bank) => (
                   <TouchableOpacity
