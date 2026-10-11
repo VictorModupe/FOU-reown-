@@ -16,20 +16,13 @@ export default function EditProfileScreen() {
   const { data: account, isLoading: accountLoading } = useCurrentUser();
   const api = useApi();
   const queryClient = useQueryClient();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState<string | null>(null);
+  const [lastName, setLastName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName || "");
-      setLastName(user.lastName || "");
-    } else if (account?.name) {
-      const [first = "", ...rest] = account.name.split(" ");
-      setFirstName(first);
-      setLastName(rest.join(" "));
-    }
-  }, [user?.id, user?.firstName, user?.lastName, account?.name]);
+  const accountNameParts = account?.name?.split(" ") ?? [];
+  const firstNameValue = firstName ?? user?.firstName ?? accountNameParts[0] ?? "";
+  const lastNameValue = lastName ?? user?.lastName ?? accountNameParts.slice(1).join(" ");
 
   useEffect(() => {
     if (authLoaded && !isSignedIn) router.replace("/(routes)/login");
@@ -46,7 +39,7 @@ export default function EditProfileScreen() {
       : account?.role === "admin"
         ? "Admin"
         : "Not assigned";
-  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+  const fullName = `${firstNameValue.trim()} ${lastNameValue.trim()}`.trim();
 
   const saveProfile = async () => {
     if (!user || !fullName || fullName.length < 2 || fullName.length > 80) {
@@ -56,7 +49,7 @@ export default function EditProfileScreen() {
 
     setIsSaving(true);
     try {
-      await user.update({ firstName: firstName.trim(), lastName: lastName.trim() || undefined });
+      await user.update({ firstName: firstNameValue.trim(), lastName: lastNameValue.trim() || undefined });
       const refreshedUser = await user.reload();
       const { data } = await api.patch("/users/me/profile", {
         name: refreshedUser.fullName?.trim() || fullName,
@@ -109,7 +102,7 @@ export default function EditProfileScreen() {
           <View className="mx-6 border-t border-surface-light pt-6">
             <Text className="mb-2 text-sm font-semibold text-text-primary">First name</Text>
             <TextInput
-              value={firstName}
+              value={firstNameValue}
               onChangeText={setFirstName}
               placeholder="First name"
               placeholderTextColor="#8E8491"
@@ -122,7 +115,7 @@ export default function EditProfileScreen() {
 
             <Text className="mb-2 text-sm font-semibold text-text-primary">Last name</Text>
             <TextInput
-              value={lastName}
+              value={lastNameValue}
               onChangeText={setLastName}
               placeholder="Last name"
               placeholderTextColor="#8E8491"

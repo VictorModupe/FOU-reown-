@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, ImageBackground, Keyboard, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
-import { useLocalSearchParams } from 'expo-router';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useApi } from '@/lib/api';
 import { toast } from 'sonner-native';
 
@@ -13,17 +12,21 @@ export default function SignupOtpScreen() {
 	const { role: requestedRole } = useLocalSearchParams<{ role?: string }>();
 	const api = useApi();
 	const [isVerifying, setIsVerifying] = useState(false);
+	const [verificationComplete, setVerificationComplete] = useState(false);
+	const [isResending, setIsResending] = useState(false);
 
 	const updateCode = (value: string, index: number) => {
-		const digit = value.replace(/\D/g, '').slice(-1);
+		const digits = value.replace(/\D/g, '').slice(0, 6 - index);
 		const next = [...code];
-		next[index] = digit;
+		digits.split('').forEach((digit, offset) => {
+			next[index + offset] = digit;
+		});
 		setCode(next);
 
-		if (digit && index < 5) {
-			inputs.current[index + 1]?.focus();
-		} else if (digit && index === 5) {
+		if (next.every(Boolean)) {
 			Keyboard.dismiss();
+		} else if (digits && index < 5) {
+			inputs.current[Math.min(index + digits.length, 5)]?.focus();
 		}
 	};
 
@@ -33,21 +36,52 @@ export default function SignupOtpScreen() {
 		}
 	};
 
+	const completeAccountSetup = async () => {
+		const role = requestedRole === 'vendor' ? 'vendor' : 'customer';
+		const { data } = await api.post('/users/signup-role', { role });
+		toast.success(role === 'vendor' ? 'Seller account created' : 'Customer account created');
+		router.replace(data.role === 'vendor' ? '/(vendor-tabs)' : '/(customer-tabs)');
+	};
+
 	const verifyCode = async () => {
+		if (verificationComplete) {
+			setIsVerifying(true);
+			try {
+				await completeAccountSetup();
+			} catch (error: any) {
+				toast.error(error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Could not finish account setup');
+			} finally {
+				setIsVerifying(false);
+			}
+			return;
+		}
 		if (!isLoaded || !signUp) return;
 		setIsVerifying(true);
 		try {
 			const result = await signUp.attemptEmailAddressVerification({ code: code.join('') });
 			if (result.status !== 'complete' || !result.createdSessionId) throw new Error('Verification is incomplete.');
 			await setActive({ session: result.createdSessionId });
-			const role = requestedRole === 'customer' ? 'customer' : 'vendor';
-			const { data } = await api.post('/users/signup-role', { role });
-			toast.success(role === 'vendor' ? 'Seller account created' : 'Customer account created');
-			router.replace(data.role === 'vendor' ? '/(vendor-tabs)' : '/(customer-tabs)');
+			setVerificationComplete(true);
+			await completeAccountSetup();
 		} catch (error: any) {
-			toast.error(error?.response?.data?.error || error?.errors?.[0]?.longMessage || error?.message || 'Could not finish account setup');
+			toast.error(error?.response?.data?.error || error?.response?.data?.message || error?.errors?.[0]?.longMessage || error?.message || 'Could not finish account setup');
 		} finally {
 			setIsVerifying(false);
+		}
+	};
+
+	const resendCode = async () => {
+		if (!isLoaded || !signUp || verificationComplete) return;
+		setIsResending(true);
+		try {
+			await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+			setCode(Array(6).fill(''));
+			inputs.current[0]?.focus();
+			toast.success('A new verification code was sent');
+		} catch (error: any) {
+			toast.error(error?.errors?.[0]?.longMessage || error?.message || 'Could not resend the code');
+		} finally {
+			setIsResending(false);
 		}
 	};
 
@@ -55,11 +89,11 @@ export default function SignupOtpScreen() {
 		<ImageBackground source={require('../../../assets/images/auth-image.png')} resizeMode="cover" style={styles.background}>
 			<View style={styles.overlay} />
 			<SafeAreaView style={styles.container}>
-			<Text style={styles.title}>Verify your email</Text>
-			<Text style={styles.subtitle}>Enter the 6-digit code sent to your email address.</Text>
+			<Text style={styles.title}>{verificationComplete ? 'Finish account setup' : 'Verify your email'}</Text>
+			<Text style={styles.subtitle}>{verificationComplete ? 'Your email is verified. Retry to finish setting up your account.' : 'Enter the 6-digit code sent to your email address.'}</Text>
 
 			<View style={styles.inputs}>
-				{code.map((digit, index) => (
+				{!verificationComplete && code.map((digit, index) => (
 					<TextInput
 						key={index}
 						ref={(input) => {
@@ -69,16 +103,19 @@ export default function SignupOtpScreen() {
 						onChangeText={(value) => updateCode(value, index)}
 						onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
 						keyboardType="number-pad"
-						maxLength={1}
+						maxLength={6}
 						selectTextOnFocus
 						textAlign="center"
 						style={styles.input}
 					/>
 				))}
 			</View>
-			<TouchableOpacity style={styles.button} onPress={verifyCode} disabled={isVerifying || code.some((digit) => !digit)}>
-				{isVerifying ? <ActivityIndicator color="#121212" /> : <Text style={styles.buttonText}>Verify email</Text>}
+			<TouchableOpacity style={styles.button} onPress={verifyCode} disabled={isVerifying || (!verificationComplete && code.some((digit) => !digit))}>
+				{isVerifying ? <ActivityIndicator color="#121212" /> : <Text style={styles.buttonText}>{verificationComplete ? 'Retry account setup' : 'Verify email'}</Text>}
 			</TouchableOpacity>
+			{!verificationComplete ? <TouchableOpacity onPress={resendCode} disabled={isResending || isVerifying} style={styles.resendButton}>
+				{isResending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.resendText}>Resend code</Text>}
+			</TouchableOpacity> : null}
 			</SafeAreaView>
 		</ImageBackground>
 	);
@@ -119,6 +156,8 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: '700',
 	},
+	resendButton: { alignItems: 'center', padding: 16 },
+	resendText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
 	input: {
 		width: 48,
 		height: 56,

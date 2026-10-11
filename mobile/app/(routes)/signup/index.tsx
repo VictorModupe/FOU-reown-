@@ -30,7 +30,7 @@ export default function SignUpScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
     const { role: requestedRole } = useLocalSearchParams<{ role?: string }>();
-    const accountType = requestedRole === "customer" ? "customer" : "vendor";
+    const accountType = requestedRole === "vendor" ? "vendor" : "customer";
     const { isLoaded, signUp } = useSignUp();
     const { loadingStrategy, handleSocialAuth } = useSocialAuth();
 

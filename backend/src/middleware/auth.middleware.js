@@ -1,7 +1,6 @@
 import { clerkClient, requireAuth } from "@clerk/express";
 import { User } from "../models/user.model.js";
 import { ENV } from "../config/env.js";
-import { hasVendorOrganizationMembership } from "../lib/vendor-membership.js";
 
 class AuthError extends Error {
   constructor(status, message) {
@@ -107,20 +106,9 @@ export const vendorOrAdmin = async (req, res, next) => {
 
   if (req.user.email === ENV.ADMIN_EMAIL) return next();
 
-  try {
-    if (!ENV.CLERK_VENDOR_ORGANIZATION_ID) {
-      return res.status(503).json({ message: "Vendor organization is not configured" });
-    }
-    const isVendor = await hasVendorOrganizationMembership(req.user.clerkId);
-    if (!isVendor) return res.status(403).json({ message: "Forbidden - Fou Org membership required" });
-
-    if (req.user.role !== "vendor") {
-      req.user.role = "vendor";
-      await req.user.save();
-    }
-    return next();
-  } catch (error) {
-    console.error("Error checking vendor organization membership:", error.message);
-    return res.status(503).json({ message: "Could not verify vendor organization membership" });
+  if (req.user.role !== "vendor") {
+    return res.status(403).json({ message: "Forbidden - vendor access only" });
   }
+
+  return next();
 };

@@ -5,6 +5,7 @@ import { useProduct } from "@/hooks/useProduct";
 import useWishlist from "@/hooks/useWishlist";
 import { useCreateOffer } from "@/hooks/useOffers";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/clerk-expo";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useSegments } from "expo-router";
 import { useState } from "react";
@@ -26,6 +27,7 @@ const ProductDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isError, isLoading } = useProduct(id);
   const { data: currentUser } = useCurrentUser();
+  const { isSignedIn } = useAuth();
   const { addToCart, isAddingToCart } = useCart();
   const segments = useSegments();
   const cartRoute = (segments as readonly string[]).includes("(vendor-tabs)")
@@ -53,6 +55,17 @@ const ProductDetailScreen = () => {
         },
       }
     );
+  };
+
+  const handleToggleWishlist = () => {
+    if (!isSignedIn) {
+      Alert.alert("Sign in required", "Sign in to save products to your wishlist.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sign in", onPress: () => router.push("/(routes)/login") },
+      ]);
+      return;
+    }
+    toggleWishlist(product!._id);
   };
 
   const handleOffer = () => {
@@ -97,7 +110,7 @@ const ProductDetailScreen = () => {
           className={`w-12 h-12 rounded-full items-center justify-center ${
             isInWishlist(product._id) ? "bg-primary" : "bg-black/50 backdrop-blur-xl"
           }`}
-          onPress={() => toggleWishlist(product._id)}
+          onPress={handleToggleWishlist}
           disabled={isAddingToWishlist || isRemovingFromWishlist}
           activeOpacity={0.7}
         >

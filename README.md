@@ -44,7 +44,6 @@ CLIENT_URL=http://localhost:5173
 
 CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
-CLERK_VENDOR_ORGANIZATION_ID=org_your_fou_org_id
 
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
@@ -56,6 +55,8 @@ ADMIN_EMAIL=admin@example.com
 FLUTTERWAVE_SECRET_KEY=your_flutterwave_secret_key
 FLUTTERWAVE_WEBHOOK_SECRET_HASH=your_flutterwave_dashboard_webhook_secret_hash
 ```
+
+After email or social signup, the authenticated backend writes the selected `customer` or `vendor` role to the Clerk user's `publicMetadata.role`. The backend mirrors that role in MongoDB for application authorization; it does not use Clerk private metadata or FOU organization membership for app roles.
 
 Create `admin/.env`:
 

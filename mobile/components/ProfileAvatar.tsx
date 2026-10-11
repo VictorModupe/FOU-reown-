@@ -3,8 +3,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import * as ImagePicker from "expo-image-picker";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import Toast from "react-native-toast-message";
 
@@ -21,10 +21,6 @@ export default function ProfileAvatar({ imageUrl, name, size = 88 }: ProfileAvat
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    setFailedImageUrl(null);
-  }, [imageUrl]);
 
   const chooseImage = async () => {
     if (!isSignedIn || !user || isUpdating) return;

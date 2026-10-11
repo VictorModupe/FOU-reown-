@@ -1,14 +1,19 @@
+import { clerkClient } from "@clerk/express";
 import { User } from "../models/user.model.js";
 import { ENV } from "../config/env.js";
-import { ensureFouOrganizationMembership, getFouOrganizationAppRole } from "../lib/vendor-membership.js";
 
 export async function getCurrentUser(req, res) {
   try {
-    const organizationRole = ENV.CLERK_VENDOR_ORGANIZATION_ID
-      ? await getFouOrganizationAppRole(req.user.clerkId)
-      : null;
-    const isVendor = organizationRole === "vendor";
-    const role = req.user.email === ENV.ADMIN_EMAIL ? "admin" : isVendor ? "vendor" : "customer";
+    const clerkUser = await clerkClient.users.getUser(req.user.clerkId);
+    const metadataRole = clerkUser.publicMetadata?.role;
+    const role =
+      req.user.email === ENV.ADMIN_EMAIL
+        ? "admin"
+        : metadataRole === "vendor" || metadataRole === "customer"
+          ? metadataRole
+          : req.user.role === "vendor"
+            ? "vendor"
+            : "customer";
     if (req.user.role !== role) {
       req.user.role = role;
       await req.user.save();
@@ -28,36 +33,30 @@ export async function completeSignup(req, res) {
   }
 
   try {
-    await ensureFouOrganizationMembership(req.user.clerkId, requestedRole);
-    const role = await getFouOrganizationAppRole(req.user.clerkId);
-    if (role !== requestedRole) {
-      throw new Error("Fou Org membership role does not match the selected account type");
+    if (req.user.email === ENV.ADMIN_EMAIL) {
+      req.user.role = "admin";
+      await req.user.save();
+      return res.status(200).json({ role: "admin" });
     }
 
-    req.user.role = role;
+    const clerkUser = await clerkClient.users.getUser(req.user.clerkId);
+    await clerkClient.users.updateUserMetadata(req.user.clerkId, {
+      publicMetadata: {
+        ...clerkUser.publicMetadata,
+        role: requestedRole,
+      },
+    });
+
+    req.user.role = requestedRole;
     await req.user.save();
-    return res.status(200).json({ role });
+    return res.status(200).json({ role: requestedRole });
   } catch (error) {
-    const status = Number(error.status || error.statusCode);
-    console.error("Error completing Fou Org signup:", {
+    console.error("Error completing signup:", {
       clerkUserId: req.user.clerkId,
-      organizationId: ENV.CLERK_VENDOR_ORGANIZATION_ID || null,
-      status: Number.isFinite(status) ? status : null,
-      clerkErrors: error.errors?.map(({ code, longMessage }) => ({ code, longMessage })),
+      requestedRole,
       message: error.message,
     });
-    const missingOrganization = error.message === "CLERK_VENDOR_ORGANIZATION_ID is not configured";
-    const organizationNotFound = status === 404;
-    const clerkAccessDenied = status === 401 || status === 403;
-    return res.status(missingOrganization ? 503 : 502).json({
-      error: missingOrganization
-        ? "Signup is temporarily unavailable. Configure CLERK_VENDOR_ORGANIZATION_ID on the server."
-        : organizationNotFound
-          ? "Fou Org was not found. Set CLERK_VENDOR_ORGANIZATION_ID to the org_... ID from Clerk, not the organization name or slug."
-          : clerkAccessDenied
-            ? "Clerk denied access to Fou Org. Check the backend CLERK_SECRET_KEY and organization permissions."
-            : "Could not verify your Fou Org account role. Check the backend logs and try again.",
-    });
+    return res.status(500).json({ error: "Could not update account type. Please try again." });
   }
 }
 

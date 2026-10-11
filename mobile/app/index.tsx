@@ -19,7 +19,7 @@ export default function IndexRedirect() {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>
-        Couldn't load your account
+        Couldn&apos;t load your account
       </Text>
       <TouchableOpacity onPress={() => refetch()} style={{ padding: 12 }}>
         <Text>Retry</Text>

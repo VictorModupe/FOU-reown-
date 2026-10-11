@@ -4,7 +4,7 @@ import useProducts from "@/hooks/useProducts";
 
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native";
 import { router } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -19,6 +19,7 @@ const CATEGORIES = [
 const ShopScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const { isDark } = useTheme();
   const vendorAccent = isDark ? "#75D7BE" : "#087F68";
 
@@ -65,8 +66,9 @@ const ShopScreen = () => {
             <TouchableOpacity
               className="rounded-full bg-background-lighter p-3"
               activeOpacity={0.7}
+              onPress={() => setIsFilterVisible(true)}
               accessibilityRole="button"
-              accessibilityLabel="Product filters"
+              accessibilityLabel="Filter products by category"
             >
               <Ionicons name="options-outline" size={22} color={vendorAccent} />
             </TouchableOpacity>
@@ -126,6 +128,39 @@ const ShopScreen = () => {
           <ProductsGrid products={filteredProducts} isLoading={isLoading} isError={isError} error={error} />
         </View>
       </ScrollView>
+      <Modal visible={isFilterVisible} transparent animationType="slide" onRequestClose={() => setIsFilterVisible(false)}>
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="rounded-t-3xl bg-background px-5 pb-8 pt-5">
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-xl font-bold text-text-primary">Filter products</Text>
+              <TouchableOpacity onPress={() => setIsFilterVisible(false)} accessibilityRole="button" accessibilityLabel="Close filters">
+                <Ionicons name="close" size={24} color={vendorAccent} />
+              </TouchableOpacity>
+            </View>
+            {CATEGORIES.map((category) => {
+              const isSelected = selectedCategory === category.name;
+              return (
+                <TouchableOpacity
+                  key={category.name}
+                  onPress={() => {
+                    setSelectedCategory(category.name);
+                    setIsFilterVisible(false);
+                  }}
+                  className={`mb-2 min-h-12 flex-row items-center rounded-xl px-4 ${isSelected ? "bg-primary" : "bg-surface"}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Filter by ${category.name}`}
+                >
+                  <Ionicons name={category.icon} size={20} color={isSelected ? "#FFFFFF" : vendorAccent} />
+                  <Text className={`ml-3 flex-1 font-semibold ${isSelected ? "text-white" : "text-text-primary"}`}>
+                    {category.name === "All" ? "All products" : category.name}
+                  </Text>
+                  {isSelected ? <Ionicons name="checkmark" size={20} color="#FFFFFF" /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
       <TouchableOpacity
         onPress={() => router.push("/product/create")}
         activeOpacity={0.85}

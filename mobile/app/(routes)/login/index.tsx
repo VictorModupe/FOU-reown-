@@ -19,7 +19,7 @@ export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
     const { role: requestedRole } = useLocalSearchParams<{ role?: string }>();
-    const { isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
+    const { isLoaded: authLoaded, isSignedIn } = useAuth();
     const { isLoaded, signIn, setActive } = useSignIn();
     const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
     const { loadingStrategy, handleSocialAuth } = useSocialAuth();
@@ -48,7 +48,6 @@ export default function LoginScreen() {
         if (!isLoaded || !signIn) return;
         setIsSubmitting(true);
         try {
-            if (isSignedIn) await signOut();
             const result = await signIn.create({ identifier: email.trim(), password });
             if (result.status !== "complete" || !result.createdSessionId) {
                 const verificationMessage = result.status === "needs_second_factor"

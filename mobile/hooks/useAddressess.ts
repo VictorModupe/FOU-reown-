@@ -6,19 +6,22 @@ import { useAuth } from "@clerk/clerk-expo";
 export const useAddresses = () => {
   const api = useApi();
   const queryClient = useQueryClient();
-  const { userId } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const addressesQueryKey = ["addresses", userId ?? "guest"];
 
   const {
     data: addresses,
     isLoading,
     isError,
+    isRefetching,
+    refetch,
   } = useQuery({
     queryKey: addressesQueryKey,
     queryFn: async () => {
       const { data } = await api.get<{ addresses: Address[] }>("/users/addresses");
       return data.addresses;
     },
+    enabled: isLoaded && isSignedIn,
     retry: false,
   });
 
@@ -65,6 +68,8 @@ export const useAddresses = () => {
     addresses: addresses || [],
     isLoading,
     isError,
+    isRefetching,
+    refetch,
     addAddress: addAddressMutation.mutate,
     updateAddress: updateAddressMutation.mutate,
     deleteAddress: deleteAddressMutation.mutate,

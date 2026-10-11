@@ -1,5 +1,5 @@
 
-import { useAuth, useSSO } from "@clerk/clerk-expo";
+import { useSSO } from "@clerk/clerk-expo";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +17,6 @@ export type RequestedRole = "customer" | "vendor";
 export default function useSocialAuth() {
   const [loadingStrategy, setLoadingStrategy] = useState<SocialStrategy | null>(null);
   const { startSSOFlow } = useSSO();
-  const { isSignedIn, signOut } = useAuth();
   const api = useApi();
 
   // Faster browser start on Android.
@@ -35,7 +34,6 @@ export default function useSocialAuth() {
       setLoadingStrategy(strategy);
 
       try {
-        if (isSignedIn) await signOut();
         const { createdSessionId, setActive } = await startSSOFlow({
           strategy,
           // Needs a `scheme` in app.json; resolves to <scheme>://oauth-native-callback
@@ -74,7 +72,7 @@ export default function useSocialAuth() {
         setLoadingStrategy(null);
       }
     },
-    [api, isSignedIn, loadingStrategy, signOut, startSSOFlow]
+    [api, loadingStrategy, startSSOFlow]
   );
 
   return { loadingStrategy, handleSocialAuth };
