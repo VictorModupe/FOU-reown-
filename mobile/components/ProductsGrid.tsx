@@ -103,7 +103,7 @@ const ProductsGrid = ({
         </View>
 
         <View className="flex-row items-center justify-between">
-          <Text className="text-primary font-bold text-lg">${product.price.toFixed(2)}</Text>
+          <Text className="text-primary font-bold text-lg">₦{product.price.toFixed(2)}</Text>
 
           <TouchableOpacity
             className="bg-primary rounded-full w-10 h-10 items-center justify-center"

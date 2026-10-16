@@ -74,7 +74,7 @@ const RatingModal = ({
                             {item.name}
                           </Text>
                           <Text className="text-text-secondary text-xs mt-1">
-                            Qty: {item.quantity} • ${item.price.toFixed(2)}
+                            Qty: {item.quantity} • ₦{item.price.toFixed(2)}
                           </Text>
                         </View>
                       </View>

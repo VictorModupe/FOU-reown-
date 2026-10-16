@@ -5,7 +5,6 @@ import useProducts from "@/hooks/useProducts";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native";
-import { router } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const CATEGORIES = [
@@ -21,7 +20,7 @@ const ShopScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const { isDark } = useTheme();
-  const vendorAccent = isDark ? "#75D7BE" : "#087F68";
+  const vendorAccent = isDark ? "#D6BEDF" : "#4F2B50";
 
   const { data: products, isLoading, isError, error } = useProducts();
 
@@ -58,7 +57,7 @@ const ShopScreen = () => {
             <View>
               <Text className="text-text-primary text-4xl font-[4F2B50] font-kenao tracking-tight">FOU</Text>
               <Text className="text-text-secondary text-sm mt-1">Browse all products</Text>
-              <View className="mt-2 self-start rounded-full px-3 py-1" style={{ backgroundColor: isDark ? "rgba(117,215,190,0.16)" : "#DDF4EC" }}>
+              <View className="mt-2 self-start rounded-full px-3 py-1" style={{ backgroundColor: isDark ? "rgba(214,190,223,0.16)" : "#E4D8EC" }}>
                 <Text className="text-xs font-bold uppercase" style={{ color: vendorAccent }}>Seller workspace</Text>
               </View>
             </View>
@@ -161,16 +160,6 @@ const ShopScreen = () => {
           </View>
         </View>
       </Modal>
-      <TouchableOpacity
-        onPress={() => router.push("/product/create")}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Add product"
-        className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full shadow-lg"
-        style={{ backgroundColor: vendorAccent }}
-      >
-        <Ionicons name="add" size={30} color="#FFFFFF" />
-      </TouchableOpacity>
     </SafeScreen>
   );
 };

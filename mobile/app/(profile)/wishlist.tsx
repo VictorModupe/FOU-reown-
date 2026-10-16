@@ -95,7 +95,7 @@ function WishlistScreen() {
                       {item.name}
                     </Text>
                     <Text className="text-primary font-bold text-xl mb-2">
-                      ${item.price.toFixed(2)}
+                      ₦{item.price.toFixed(2)}
                     </Text>
 
                     {item.stock > 0 ? (

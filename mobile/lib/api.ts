@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect } from "react";
 import { getGuestCartSessionId } from "@/lib/guestCart";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000/api";
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "")
 
 const api = axios.create({
   baseURL: API_URL,

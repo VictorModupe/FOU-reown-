@@ -21,9 +21,10 @@ export default function OnboardingScreen() {
             />
 
             <View style={styles.contentContainer}>
-                <Text style={styles.title}>Declutter, Earn, Reown</Text>
+                <Text style={styles.title}></Text>
                 <Text style={styles.subtitle}>
-                    Discover many amazing thrift Products and Shop with us
+                    {/* Discover many amazing thrift Products and Shop with us */}
+                    Declutter, Earn, Reown
                 </Text>
 
                 <TouchableOpacity
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
         
     },
     title: {
-        fontSize: 32,
+        fontSize: 28,
         // fontWeight: "bold",
         color: "#F0E5F1",
         marginBottom: 10,

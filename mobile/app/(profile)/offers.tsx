@@ -32,7 +32,7 @@ export default function OffersScreen() {
           {offers.length === 0 ? <Text className="text-text-secondary text-center mt-12">{isVendor ? "No customer offers yet." : "Your submitted offers will appear here."}</Text> : offers.map((offer) => (
             <View key={offer._id} className="mb-3 rounded-2xl bg-surface p-4">
               <View className="flex-row justify-between"><Text className="text-text-primary flex-1 font-bold">{offer.product.name}</Text><Text className={`font-bold capitalize ${offer.status === "accepted" ? "text-green-500" : offer.status === "rejected" ? "text-red-500" : "text-orange-500"}`}>{offer.status}</Text></View>
-              <Text className="text-text-secondary mt-2">Your offer: ${offer.offeredPrice.toFixed(2)} x {offer.quantity}</Text>
+              <Text className="text-text-secondary mt-2">Your offer: ₦{offer.offeredPrice.toFixed(2)} x {offer.quantity}</Text>
               <Text className="text-text-secondary mt-1">{isVendor ? `Customer: ${typeof offer.customer === "string" ? "Customer" : offer.customer.name}` : `Seller: ${typeof offer.vendor === "string" ? "Seller" : offer.vendor.name}`}</Text>
               {offer.message ? <Text className="text-text-secondary mt-2">“{offer.message}”</Text> : null}
               {isVendor && offer.status === "pending" ? <View className="mt-4 flex-row gap-3">

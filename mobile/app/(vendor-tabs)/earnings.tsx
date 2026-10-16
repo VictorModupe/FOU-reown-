@@ -35,13 +35,13 @@ type VendorPayout = {
 type Bank = { code: string; name: string };
 
 const formatAmount = (amount: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(amount);
 
 export default function EarningsScreen() {
   const api = useApi();
   const { isDark } = useTheme();
-  const vendorAccent = isDark ? "#75D7BE" : "#087F68";
-  const vendorAccentDisabled = isDark ? "#326D5E" : "#7FB9AA";
+  const vendorAccent = isDark ? "#D6BEDF" : "#4F2B50";
+  const vendorAccentDisabled = isDark ? "#5D4268" : "#B9A8C7";
   const { isLoaded, isSignedIn, userId } = useAuth();
   const queryClient = useQueryClient();
   const [country, setCountry] = useState("");
@@ -102,7 +102,7 @@ export default function EarningsScreen() {
           <Text className="mt-1 text-text-secondary">Flutterwave sales and settlement destination</Text>
         </View>
 
-        <View className="mx-6 mb-5 rounded-2xl p-5" style={{ backgroundColor: isDark ? "#164B40" : "#087F68" }}>
+        <View className="mx-6 mb-5 rounded-2xl p-5" style={{ backgroundColor: isDark ? "#351C36" : "#4F2B50" }}>
           <Text className="text-sm font-semibold text-white/80">Sales routed to your account</Text>
           {earningsQuery.isLoading ? (
             <ActivityIndicator className="mt-4 self-start" color="#FFFFFF" />
@@ -130,7 +130,7 @@ export default function EarningsScreen() {
             <ActivityIndicator className="self-start" color={vendorAccent} />
           ) : payoutAccount && !editingAccount ? (
             <View className="flex-row items-center rounded-xl bg-surface p-4">
-              <View className="mr-3 h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(117,215,190,0.16)" : "#DDF4EC" }}>
+              <View className="mr-3 h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(214,190,223,0.16)" : "#E4D8EC" }}>
                 <Ionicons name="business-outline" size={22} color={vendorAccent} />
               </View>
               <View className="flex-1">
@@ -231,7 +231,7 @@ export default function EarningsScreen() {
             </View>
           ) : payouts.map((payout) => (
             <View key={`${payout.orderId}-${payout.transactionId}`} className="mb-2 flex-row items-center rounded-xl bg-surface p-4">
-              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(117,215,190,0.16)" : "#DDF4EC" }}>
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(214,190,223,0.16)" : "#E4D8EC" }}>
                 <Ionicons name="arrow-down-outline" size={20} color={vendorAccent} />
               </View>
               <View className="flex-1">

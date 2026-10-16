@@ -327,7 +327,7 @@ export async function createFlutterwavePayment(req, res) {
         authorization: ENV.FLUTTERWAVE_PUBLIC_KEY,
         tx_ref: txRef,
         amount: Number(total.toFixed(2)),
-        currency: "USD",
+        currency: "NGN",
         payment_options: "card,banktransfer,ussd",
         ...(subaccounts ? { subaccounts } : {}),
         customer: {
@@ -373,7 +373,7 @@ export async function verifyFlutterwavePayment(req, res) {
     if (transaction.tx_ref !== checkout.txRef) {
       return res.status(400).json({ error: "Flutterwave transaction reference mismatch" });
     }
-    if (String(transaction.currency).toUpperCase() !== "USD" ||
+    if (String(transaction.currency).toUpperCase() !== "NGN" ||
       amountInCents(transaction.amount) !== amountInCents(checkout.totalPrice)) {
       return res.status(400).json({ error: "Flutterwave payment amount or currency mismatch" });
     }
@@ -416,7 +416,7 @@ export async function handleFlutterwaveWebhook(req, res) {
     if (event.data.tx_ref && event.data.tx_ref !== transaction.tx_ref) {
       return res.status(400).json({ error: "Webhook transaction reference mismatch" });
     }
-    if (String(transaction.currency).toUpperCase() !== "USD") {
+    if (String(transaction.currency).toUpperCase() !== "NGN") {
       return res.status(400).json({ error: "Flutterwave payment currency mismatch" });
     }
 

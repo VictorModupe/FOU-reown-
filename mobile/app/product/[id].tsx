@@ -201,7 +201,7 @@ const ProductDetailScreen = () => {
 
           {/* Price */}
           <View className="flex-row items-center mb-6">
-            <Text className="text-primary text-4xl font-bold">${product.price.toFixed(2)}</Text>
+            <Text className="text-primary text-4xl font-bold">₦{product.price.toFixed(2)}</Text>
             {canMakeOffer ? (
               <TouchableOpacity
                 className="ml-4 rounded-full border border-primary px-4 py-2"
@@ -263,7 +263,7 @@ const ProductDetailScreen = () => {
               <Text className="text-text-primary text-2xl font-bold">Make an offer</Text>
               <TouchableOpacity onPress={() => setOfferVisible(false)}><Ionicons name="close" size={26} color="#4F2B50" /></TouchableOpacity>
             </View>
-            <Text className="text-text-secondary">Current price: ${product.price.toFixed(2)} each</Text>
+            <Text className="text-text-secondary">Current price: ₦{product.price.toFixed(2)} each</Text>
             <TextInput className="mt-4 rounded-xl bg-surface px-4 py-4 text-text-primary" placeholder="Your price per item" placeholderTextColor="#888" keyboardType="decimal-pad" value={offerPrice} onChangeText={setOfferPrice} />
             <TextInput className="mt-3 rounded-xl bg-surface px-4 py-4 text-text-primary" placeholder="Message to seller (optional)" placeholderTextColor="#888" value={offerMessage} onChangeText={setOfferMessage} maxLength={500} multiline />
             <TouchableOpacity className="mt-5 rounded-xl bg-primary py-4" onPress={handleOffer} disabled={createOffer.isPending}>
@@ -279,7 +279,7 @@ const ProductDetailScreen = () => {
           <View className="flex-1">
             <Text className="text-text-secondary text-sm mb-1">Total Price</Text>
             <Text className="text-primary text-2xl font-bold">
-              ${(product.price * quantity).toFixed(2)}
+              ₦{(product.price * quantity).toFixed(2)}
             </Text>
           </View>
           <TouchableOpacity

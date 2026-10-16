@@ -156,7 +156,7 @@ function ProductsPage() {
                     <div className="flex items-center gap-6 mt-4">
                       <div>
                         <p className="text-xs text-base-content/70">Price</p>
-                        <p className="font-bold text-lg">${product.price}</p>
+                        <p className="font-bold text-lg">₦{product.price}</p>
                       </div>
                       <div>
                         <p className="text-xs text-base-content/70">Stock</p>
@@ -245,7 +245,7 @@ function ProductsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">
-                  <span>Price ($)</span>
+                  <span>Price (₦)</span>
                 </label>
                 <input
                   type="number"

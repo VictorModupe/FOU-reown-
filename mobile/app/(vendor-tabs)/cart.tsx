@@ -35,7 +35,7 @@ const CartScreen = () => {
 
   const cartItems = cart?.items || [];
   const subtotal = cartTotal;
-  const shipping = 10.0; // $10 shipping fee
+  const shipping = 10.0; // ₦10 shipping fee
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
 
@@ -195,10 +195,10 @@ const CartScreen = () => {
                     </Text>
                     <View className="flex-row items-center mt-2">
                       <Text className="text-primary font-bold text-2xl">
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        ₦{(item.product.price * item.quantity).toFixed(2)}
                       </Text>
                       <Text className="text-text-secondary text-sm ml-2">
-                        ${item.product.price.toFixed(2)} each
+                        ₦{item.product.price.toFixed(2)} each
                       </Text>
                     </View>
                   </View>
@@ -265,7 +265,7 @@ const CartScreen = () => {
             </Text>
           </View>
           <View className="flex-row items-center">
-            <Text className="text-text-primary font-bold text-xl">${total.toFixed(2)}</Text>
+            <Text className="text-text-primary font-bold text-xl">₦{total.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -316,7 +316,7 @@ const CartScreen = () => {
                     <ActivityIndicator size="small" color="#8264A9" />
                   ) : (
                     <>
-                      <Text className="text-background font-bold text-lg mr-2">Pay ${total.toFixed(2)}</Text>
+                      <Text className="text-background font-bold text-lg mr-2">Pay ₦{total.toFixed(2)}</Text>
                       <Ionicons name="arrow-forward" size={20} color="#8264A9" />
                     </>
                   )}
